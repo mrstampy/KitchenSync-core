@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE ant [
-	<!ENTITY KitchenSync.version "2.0">
+	<!ENTITY project.version "2.0">
 ]>
 <project name="KitchenSync-core" basedir="." default="create deployables" xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:m="http://ant.apache.org/ivy/maven" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
 	<!-- defined maven snapshots and staging repository id and url -->
-	<property name="KitchenSync.version" value="&KitchenSync.version;"/>
+	<property name="project.version" value="&project.version;"/>
 	<property name="maven-snapshots-repository-id" value="sonatype-nexus-snapshots" />
 	<property name="maven-snapshots-repository-url" value="https://oss.sonatype.org/content/repositories/snapshots/" />
 	<property name="maven-staging-repository-id" value="sonatype-nexus-staging" />
@@ -17,18 +17,18 @@
 	<property name="project.description" value="KitchenSync-core - A Java Library for Distributed Communication"/>
 
 	<!-- define artifacts' name, which follows the convention of Maven -->
-	<property name="maven-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;.jar" />
-	<property name="maven-javadoc-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;-javadoc.jar" />
-	<property name="maven-sources-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;-sources.jar" />
-	<property name="maven-config-zip" value="${basedir}/build/${artifactId}-&KitchenSync.version;-config.zip" />
+	<property name="maven-jar" value="${basedir}/build/${artifactId}-${project.version}.jar" />
+	<property name="maven-javadoc-jar" value="${basedir}/build/${artifactId}-${project.version}-javadoc.jar" />
+	<property name="maven-sources-jar" value="${basedir}/build/${artifactId}-${project.version}-sources.jar" />
+	<property name="maven-config-zip" value="${basedir}/build/${artifactId}-${project.version}-config.zip" />
 
-	<path id="KitchenSync.classpath">
+	<path id="project.classpath">
 		<fileset dir="${basedir}/lib">
 			<include name="**/*.jar" />
 		</fileset>
 	</path>
 	
-	<path id="KitchenSync.src">
+	<path id="project.src">
 		<dirset dir="${basedir}">
 			<include name="src"/>
 			<include name="test"/>
@@ -47,48 +47,48 @@
 	
 	<target name="deploy snapshot">
 		<antcall target="copypom">
-			<param name="to.pom" value="${basedir}/build/KitchenSync-&KitchenSync.version;.pom"/>
+			<param name="to.pom" value="${basedir}/build/${artifactId}-${project.version}.pom"/>
 			<param name="from.pom" value="${basedir}/pom.xml"/>
 		</antcall>
 		
 		<antcall target="deployImpl">
 			<param name="resolver" value="sonatype-nexus-snapshots"/>
 			<param name="status" value="integration"/>
-			<param name="KitchenSync.module" value="KitchenSync"/>
-			<param name="KitchenSync.ivy.file" value="ivy.xml"/>
+			<param name="project.module" value="${artifactId}"/>
+			<param name="project.ivy.file" value="ivy.xml"/>
 		</antcall>
 	</target>
 	
 	<target name="deploy staging">
 		<antcall target="copypom">
-			<param name="to.pom" value="${basedir}/build/KitchenSync-&KitchenSync.version;.pom"/>
+			<param name="to.pom" value="${basedir}/build/${artifactId}-${project.version}.pom"/>
 			<param name="from.pom" value="${basedir}/pom.xml"/>
 		</antcall>
 		
 		<antcall target="deployImpl">
 			<param name="resolver" value="sonatype-nexus-staging"/>
 			<param name="status" value="release"/>
-			<param name="KitchenSync.module" value="KitchenSync"/>
-			<param name="KitchenSync.ivy.file" value="ivy.xml"/>
+			<param name="project.module" value="${artifactId}"/>
+			<param name="project.ivy.file" value="ivy.xml"/>
 		</antcall>
 	</target>
 	
 	<target name="copypom">
 		<copyfile dest="${to.pom}" src="${from.pom}"/>
-		<replace file="${to.pom}" token="$KitchenSync.version" value="&KitchenSync.version;"/>
+		<replace file="${to.pom}" token="$project.version" value="${project.version}"/>
 	</target>
 	
 	<target name="deployImpl">
-		<ivy:resolve file="${KitchenSync.ivy.file}"/>
+		<ivy:resolve file="${project.ivy.file}"/>
 		<ivy:publish
 			artifactspattern="${basedir}/build/[artifact]-[revision](-[classifier]).[ext]"
 			resolver="${resolver}"
 			srcivypattern="${basedir}/ivy.xml"
 			organisation="com.github.mrstampy"
-			module="${KitchenSync.module}"
+			module="${project.module}"
 			overwrite="true"
 			status="${status}"
-			pubrevision="&KitchenSync.version;">
+			pubrevision="${project.version}">
 		</ivy:publish>
 	</target>
 
@@ -103,11 +103,11 @@
 
 	<target name="create jar">
 		<jar destfile="${maven-jar}" basedir="${basedir}/bin" excludes="logback.xml, **/test, **/test/*">
-			<manifest id="KitchenSync.javadoc.manifest">
+			<manifest id="project.javadoc.manifest">
 				<attribute name="Built-By" value="Burton Alexander" />
 				<attribute name="Email-Address" value="burton@users.sourceforge.net" />
 				<attribute name="Project-Website" value="${project.website}" />
-				<attribute name="Release-Number" value="&KitchenSync.version;" />
+				<attribute name="Release-Number" value="${project.version}" />
 				<attribute name="Release-Description" value="Integration" />
 			</manifest>
 		</jar>
@@ -116,11 +116,11 @@
 	<target name="create source jar">
 		<jar destfile="${maven-sources-jar}" basedir="${basedir}/src">
 			<fileset dir="${basedir}/test"/>
-			<manifest id="KitchenSync.javadoc.manifest">
+			<manifest id="project.javadoc.manifest">
 				<attribute name="Built-By" value="Burton Alexander" />
 				<attribute name="Email-Address" value="burton@users.sourceforge.net" />
 				<attribute name="Project-Website" value="${project.website}" />
-				<attribute name="Release-Number" value="&KitchenSync.version;" />
+				<attribute name="Release-Number" value="${project.version}" />
 				<attribute name="Release-Description" value="Integration" />
 			</manifest>
 		</jar>
@@ -131,8 +131,8 @@
 		<mkdir dir="${basedir}/build/javadoc" />
 		
 		<javadoc 
-			classpathref="KitchenSync.classpath" 
-			sourcepathref="KitchenSync.src" 
+			classpathref="project.classpath" 
+			sourcepathref="project.src" 
 			packagenames="com.github.mrstampy.*"
 			description="${project.description}"
 			doctitle="${project.description}"
@@ -149,11 +149,11 @@
 	
 	<target name="jar creator">
 		<jar destfile="${jar.destfile}" basedir="${jar.basedir}">
-			<manifest id="KitchenSync.javadoc.manifest">
+			<manifest id="project.javadoc.manifest">
 				<attribute name="Built-By" value="Burton Alexander" />
 				<attribute name="Email-Address" value="burton@users.sourceforge.net" />
 				<attribute name="Project-Website" value="${project.website}" />
-				<attribute name="Release-Number" value="&KitchenSync.version;" />
+				<attribute name="Release-Number" value="${project.version}" />
 				<attribute name="Release-Description" value="Integration" />
 			</manifest>
 		</jar>
