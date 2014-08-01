@@ -12,16 +12,15 @@
 	<property name="maven-staging-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
 
 	<!-- define Maven coordinates -->
+	<property name="artifactId" value="KitchenSync-core" />
+	<property name="project.website" value="http://mrstampy.github.io/KitchenSync-core/"/>
+	<property name="project.description" value="KitchenSync-core - A Java Library for Distributed Communication"/>
 
 	<!-- define artifacts' name, which follows the convention of Maven -->
 	<property name="maven-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;.jar" />
 	<property name="maven-javadoc-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;-javadoc.jar" />
 	<property name="maven-sources-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;-sources.jar" />
 	<property name="maven-config-zip" value="${basedir}/build/${artifactId}-&KitchenSync.version;-config.zip" />
-	
-	<property name="artifactId" value="KitchenSync-core" />
-	<property name="project.website" value="http://mrstampy.github.io/KitchenSync-core/"/>
-	<property name="project.description" value="KitchenSync-core - A Java Library for Distributed Communication"/>
 
 	<path id="KitchenSync.classpath">
 		<fileset dir="${basedir}/lib">
