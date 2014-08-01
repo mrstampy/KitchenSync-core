@@ -1,0 +1,6 @@
+/bin/
+/.settings/
+/lib/
+/config/*
+/build/*
+/build/
