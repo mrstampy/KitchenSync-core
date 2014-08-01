@@ -12,13 +12,16 @@
 	<property name="maven-staging-repository-url" value="https://oss.sonatype.org/service/local/staging/deploy/maven2/" />
 
 	<!-- define Maven coordinates -->
-	<property name="artifactId" value="KitchenSync" />
 
 	<!-- define artifacts' name, which follows the convention of Maven -->
 	<property name="maven-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;.jar" />
 	<property name="maven-javadoc-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;-javadoc.jar" />
 	<property name="maven-sources-jar" value="${basedir}/build/${artifactId}-&KitchenSync.version;-sources.jar" />
 	<property name="maven-config-zip" value="${basedir}/build/${artifactId}-&KitchenSync.version;-config.zip" />
+	
+	<property name="artifactId" value="KitchenSync-core" />
+	<property name="project.website" value="http://mrstampy.github.io/KitchenSync-core/"/>
+	<property name="project.description" value="KitchenSync-core - A Java Library for Distributed Communication"/>
 
 	<path id="KitchenSync.classpath">
 		<fileset dir="${basedir}/lib">
@@ -104,7 +107,7 @@
 			<manifest id="KitchenSync.javadoc.manifest">
 				<attribute name="Built-By" value="Burton Alexander" />
 				<attribute name="Email-Address" value="burton@users.sourceforge.net" />
-				<attribute name="Project-Website" value="http://mrstampy.github.io/KitchenSync/" />
+				<attribute name="Project-Website" value="${project.website}" />
 				<attribute name="Release-Number" value="&KitchenSync.version;" />
 				<attribute name="Release-Description" value="Integration" />
 			</manifest>
@@ -117,7 +120,7 @@
 			<manifest id="KitchenSync.javadoc.manifest">
 				<attribute name="Built-By" value="Burton Alexander" />
 				<attribute name="Email-Address" value="burton@users.sourceforge.net" />
-				<attribute name="Project-Website" value="http://mrstampy.github.io/KitchenSync/" />
+				<attribute name="Project-Website" value="${project.website}" />
 				<attribute name="Release-Number" value="&KitchenSync.version;" />
 				<attribute name="Release-Description" value="Integration" />
 			</manifest>
@@ -132,9 +135,9 @@
 			classpathref="KitchenSync.classpath" 
 			sourcepathref="KitchenSync.src" 
 			packagenames="com.github.mrstampy.*"
-			description="KitchenSync - A Java Library for Distributed Communication"
-			doctitle="KitchenSync - A Java Library for Distributed Communication"
-			header="KitchenSync - A Java Library for Distributed Communication"
+			description="${project.description}"
+			doctitle="${project.description}"
+			header="${project.description}"
 			footer="brought to you by Mr. Stampy"
 			destdir="${basedir}/build/javadoc">
 		</javadoc>
@@ -150,7 +153,7 @@
 			<manifest id="KitchenSync.javadoc.manifest">
 				<attribute name="Built-By" value="Burton Alexander" />
 				<attribute name="Email-Address" value="burton@users.sourceforge.net" />
-				<attribute name="Project-Website" value="http://mrstampy.github.io/KitchenSync/" />
+				<attribute name="Project-Website" value="${project.website}" />
 				<attribute name="Release-Number" value="&KitchenSync.version;" />
 				<attribute name="Release-Description" value="Integration" />
 			</manifest>

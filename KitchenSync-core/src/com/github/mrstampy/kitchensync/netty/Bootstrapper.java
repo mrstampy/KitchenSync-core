@@ -503,7 +503,7 @@ public class Bootstrapper {
 
 	/**
 	 * Creates bootstrap for all purposes. Sets default options, event loop group
-	 * and channel class. If the port > 0 (and it should be > 1024) then it is set
+	 * and channel class. If the port &gt; 0 (and it should be &gt; 1024) then it is set
 	 * in the bootstrap (localAddress).
 	 *
 	 * @param <CHANNEL>

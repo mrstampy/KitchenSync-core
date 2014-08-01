@@ -21,6 +21,7 @@ package com.github.mrstampy.kitchensync.netty.channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.DatagramChannel;
+import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -181,7 +182,7 @@ public abstract class AbstractKiSyMulticastChannel<BBC extends ByteBufCreator, C
 	 * Note that broadcasting bypasses the outbound message handlers. If required
 	 * this method can be overridden to invoke
 	 * {@link #presend(Object, InetSocketAddress)} prior to
-	 * {@link #sendImpl(Object, InetSocketAddress)}.
+	 * {@link #sendImpl(DatagramPacket, InetSocketAddress)}.
 	 *
 	 * @param <MSG>
 	 *          the generic type

@@ -28,13 +28,13 @@ import com.github.mrstampy.kitchensync.netty.channel.AbstractKiSyChannel;
  * Implementations determine how to create a ByteBuf for the given message and
  * intended recipient (if applicable).
  * 
- * @see AbstractKiSyChannel#setByteBufCreator(ByteBufCreator)
- * @see AbstractKiSyChannel#usesDefaultByteBufCreators()
+ * @see AbstractKiSyChannel
  */
 public interface ByteBufCreator {
 
 	/**
-	 * Creates the ByteBuf from the given message and intended recipient (if applicable).
+	 * Creates the ByteBuf from the given message and intended recipient (if
+	 * applicable).
 	 *
 	 * @param <MSG>
 	 *          the generic type

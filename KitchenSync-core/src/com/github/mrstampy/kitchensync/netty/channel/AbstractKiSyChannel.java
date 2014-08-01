@@ -129,14 +129,14 @@ public abstract class AbstractKiSyChannel<BBC extends ByteBufCreator, CI extends
 	 * handlers</a> should be added to the channel's pipeline to control its
 	 * behaviour ie. <a
 	 * href="http://netty.io/4.0/api/io/netty/handler/ssl/SslHandler.html"
-	 * >SslHandler<a> can be added for SSL encryption.
-	 * <p>
+	 * >SslHandler</a> can be added for SSL encryption. <br>
+	 * <br>
 	 * 
 	 * Note that the default bootstrap will use the ChannelInitializer from the
 	 * first instantiated {@link AbstractKiSyChannel}, unless it has been
 	 * explicitly initialized prior.
 	 * 
-	 * @return the channel initializer< datagram channel>
+	 * @return the channel initializer
 	 */
 	protected abstract CI initializer();
 
@@ -217,8 +217,6 @@ public abstract class AbstractKiSyChannel<BBC extends ByteBufCreator, CI extends
 	 *          the address
 	 * @return the object
 	 * @see ByteBufCreator
-	 * @see #setByteBufCreator(ByteBufCreator)
-	 * @see #usesDefaultByteBufCreators()
 	 */
 	protected <MSG extends Object> DatagramPacket createMessage(MSG message, InetSocketAddress address) {
 		ByteBufCreator creator = getByteBufCreator();
@@ -246,7 +244,7 @@ public abstract class AbstractKiSyChannel<BBC extends ByteBufCreator, CI extends
 	}
 
 	/**
-	 * Presend, invoked prior to {@link #sendImpl(Object, InetSocketAddress)}.
+	 * Presend, invoked prior to {@link #sendImpl(DatagramPacket, InetSocketAddress)}.
 	 *
 	 * @param <MSG>
 	 *          the generic type
