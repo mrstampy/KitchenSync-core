@@ -76,6 +76,7 @@
 	<target name="copypom">
 		<copyfile dest="${to.pom}" src="${from.pom}"/>
 		<replace file="${to.pom}" token="$project.version" value="${project.version}"/>
+		<replace file="${to.pom}" token="$project.description" value="${project.description}"/>
 	</target>
 	
 	<target name="deployImpl">

@@ -11,8 +11,8 @@
   <groupId>com.github.mrstampy</groupId>
   <artifactId>KitchenSync-core</artifactId>
   <packaging>jar</packaging>
-  <version>$KitchenSync.version</version>
-  <description>KitchenSync-core - A Java Library for Distributed Communication</description>
+  <version>$project.version</version>
+  <description>$project.description</description>
   <url>http://mrstampy.github.io/KitchenSync-core/</url>
   <licenses>
     <license>
@@ -64,5 +64,5 @@
       <optional>false</optional>
     </dependency>
   </dependencies>
-  <name>KitchenSync-core - A Java Library for Distributed Communication</name>
+  <name>$project.description</name>
 </project>
