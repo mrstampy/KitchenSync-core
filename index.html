@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Kitchensync-core by mrstampy</title>
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script src="javascripts/respond.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <!--[if lt IE 8]>
+    <link rel="stylesheet" href="stylesheets/ie.css">
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+      <div id="header">
+        <nav>
+          <li class="fork"><a href="https://github.com/mrstampy/KitchenSync-core">View On GitHub</a></li>
+          <li class="downloads"><a href="https://github.com/mrstampy/KitchenSync-core/zipball/master">ZIP</a></li>
+          <li class="downloads"><a href="https://github.com/mrstampy/KitchenSync-core/tarball/master">TAR</a></li>
+          <li class="title">DOWNLOADS</li>
+        </nav>
+      </div><!-- end header -->
+
+    <div class="wrapper">
+
+      <section>
+        <div id="title">
+          <h1>Kitchensync-core</h1>
+          <p>KitchenSync-core - A Java Library for Distributed Communication</p>
+          <hr>
+          <span class="credits left">Project maintained by <a href="https://github.com/mrstampy">mrstampy</a></span>
+          <span class="credits right">Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></span>
+        </div>
+
+        <h1>
+<a name="a-java-library-for-distributed-communication" class="anchor" href="#a-java-library-for-distributed-communication"><span class="octicon octicon-link"></span></a>A Java Library for Distributed Communication</h1>
+
+<h1>
+<a name="release-20---august-2-2014" class="anchor" href="#release-20---august-2-2014"><span class="octicon octicon-link"></span></a>Release 2.0 - August 2, 2014</h1>
+
+<ul>
+<li>Initial release</li>
+<li>Core functionality extracted from <a href="https://github.com/mrstampy/KitchenSync">KitchenSync</a> which now remains as a simple reference implementation</li>
+<li>Strong typing of abstract channels</li>
+</ul><h1>
+<a name="quickstart" class="anchor" href="#quickstart"><span class="octicon octicon-link"></span></a>Quickstart</h1>
+
+<ul>
+<li>Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.0"/&gt;</li>
+<li><a href="https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test">Example code</a></li>
+</ul><h1>
+<a name="kitchensync-architecture" class="anchor" href="#kitchensync-architecture"><span class="octicon octicon-link"></span></a>KitchenSync Architecture</h1>
+
+<p>KitchenSync-core is a Java Library for non-centralized network communication between separate processes using the <a href="http://en.wikipedia.org/wiki/User_Datagram_Protocol">UDP</a> protocol.  Channels can be created as multicast channels which allow broadcasting of messages to all connected channels, port-specific channels or next-port-available channels and are intended to be easily created and destroyed as required. It is built on top of <a href="http://netty.io">Netty</a> and is designed to be simple to understand and use while providing the ability to customise individual channels.  </p>
+
+<p>Two interfaces - <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/KiSyChannel.java">KiSyChannel</a> and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/KiSyMulticastChannel.java">KiSyMulticastChannel</a> - provide the API for network communication.  Three abstract implementations - <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/AbstractKiSyChannel.java">AbstractKiSyChannel</a>, <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/AbstractPortSpecificKiSyChannel.java">AbstractPortSpecificKiSyChannel</a>, and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/AbstractKiSyMulticastChannel.java">AbstractKiSyMulticastChannel</a> - exist for ease of channel creation:</p>
+
+<pre><code>public class ByteArrayChannel extends
+        AbstractKiSyChannel&lt;ByteArrayByteBufCreator, ByteArrayMessageInitializer, NioDatagramChannel&gt; {
+
+    @Override
+    protected ByteArrayMessageInitializer initializer() {
+        return new ByteArrayMessageInitializer();
+    }
+
+    @Override
+    protected Class&lt;NioDatagramChannel&gt; getChannelClass() {
+        return NioDatagramChannel.class;
+    }
+
+    @Override
+    protected ByteArrayByteBufCreator initByteBufCreator() {
+        return new ByteArrayByteBufCreator();
+    }
+
+}
+</code></pre>
+
+<p>The <a href="http://netty.io/4.0/api/io/netty/channel/ChannelInitializer.html">ChannelInitializer</a> is a Netty class which is used to initialise a <a href="http://netty.io/4.0/api/io/netty/bootstrap/Bootstrap.html">Bootstrap</a> object for the channel and is ignored if the Bootstrap <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/DefaultChannelRegistry.java">already exists</a>.  <a href="http://netty.io/4.0/api/io/netty/channel/ChannelHandler.html">Netty channel handlers</a> are added to the channel's pipeline in the implementation of the ChannelInitializer to control the channel's behaviour such as using SSL for connections:</p>
+
+<pre><code>@Override
+protected void initChannel(DatagramChannel ch) throws Exception {
+    ChannelPipeline pipeline = ch.pipeline();
+
+    pipeline.addLast(new SslHandler(context.createSSLEngine()));
+    pipeline.addLast(new KiSyMessageHandler());
+}
+</code></pre>
+
+<p>KiSyChannels can send and receive one of two types of messages by default - <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/initializer/ByteArrayMessageInitializer.java">byte arrays</a> and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/netty/channel/initializer/StringMessageInitializer.java">strings</a>.</p>
+
+<h2>
+<a name="inbound-and-outbound" class="anchor" href="#inbound-and-outbound"><span class="octicon octicon-link"></span></a>Inbound and Outbound</h2>
+
+<p>KitchenSync-core adds to the Netty architecture - which provides the ability to add custom handlers to interface with applications - by providing <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/message/inbound/KiSyInboundMessageManager.java">inbound</a> and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/message/outbound/KiSyOutboundMessageManager.java">outbound</a> message managers which are initialised on application startup to apply <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/message/inbound/KiSyInboundMesssageHandler.java">inbound</a> and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/message/outbound/KiSyOutboundMessageHandler.java">outbound</a> application specific KitchenSync handler implementations to messages.  This separates channel configuration (in the ChannelInitializer) from message processing such as logging of messages, persistence of messages, autonomous event triggering on message, etc.  The handlers' execution is ordered to allow sequential operations to take place.  Note that the handlers exist for preparation of messages for processing by the application and execution of any presend logic.  Any significant processing of the message should be done on a separate thread.  Strictly speaking only one implementation is necessary - inbound, to pull messages into the application.</p>
+      </section>
+
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+    
+  </body>
+</html>
