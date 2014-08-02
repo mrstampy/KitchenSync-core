@@ -3,7 +3,7 @@
 # Release 2.0 - August 2, 2014
 
 * Initial release
-* Core functionality extracted from [KitchenSync]() which now remains as a simple reference implementation
+* Core functionality extracted from [KitchenSync](https://github.com/mrstampy/KitchenSync) which now remains as a simple reference implementation
 * Strong typing of abstract channels
 
 # Quickstart
