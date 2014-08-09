@@ -22,7 +22,6 @@ import io.netty.channel.ChannelFuture;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetSocketAddress;
@@ -31,13 +30,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.mrstampy.kitchensync.message.inbound.ByteArrayInboundMessageManager;
 import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 import com.github.mrstampy.kitchensync.test.channel.ByteArrayChannel;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
@@ -149,13 +148,16 @@ public class StreamerTester {
 
 			@Override
 			public boolean canHandleMessage(byte[] message) {
-				return true;
+				return !StreamerAckRegister.isAckMessage(message);
 			}
 
 			@Override
 			public void messageReceived(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
 				received.addAndGet(message.length);
-				streamer.ackReceived(KiSyUtils.convertToInt(message));
+				
+				int sumOfBytes = StreamerAckRegister.convertToInt(message); 
+
+				channel.send(StreamerAckRegister.createAckResponse(sumOfBytes), sender);
 			}
 
 			@Override
@@ -163,7 +165,7 @@ public class StreamerTester {
 				return 0;
 			}
 
-		});
+		}, new StreamAckInboundMessageHandler());
 	}
 
 	/**

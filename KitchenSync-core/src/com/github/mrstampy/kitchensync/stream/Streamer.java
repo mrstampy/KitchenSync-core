@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 
 import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
@@ -39,6 +40,21 @@ public interface Streamer<MSG> {
 
 	/** The Constant DEFAULT_CHUNK_SIZE, 1024. */
 	public static final int DEFAULT_CHUNK_SIZE = 1024;
+
+	/**
+	 * The prefix used to identify return messages when {@link #isAckRequired()}:
+	 * 'StreamAck:'. The suffix is the sum of the btyes of the message being
+	 * acknowledged.
+	 * 
+	 * @see KiSyUtils#convertToInt(byte[])
+	 * @see Streamer#ackRequired()
+	 */
+	public static final String ACK_PREFIX = "StreamAck:";
+	
+	/**
+	 * Convenience constant for the byte array from {@link #ACK_PREFIX}.
+	 */
+	public static final byte[] ACK_PREFIX_BYTES = ACK_PREFIX.getBytes();
 
 	/**
 	 * Resets the position in the stream for sending. If invoked while streaming
@@ -257,12 +273,13 @@ public interface Streamer<MSG> {
 	 * isn't a good fit for {@link KiSyChannel#isMulticastChannel()}s...<br>
 	 * <br>
 	 * 
-	 * Throughput on a single host using 2048 byte packets is on the order of 30
+	 * Throughput on a single host using 2048 byte packets is on the order of 18
 	 * megabytes/sec.
 	 * 
 	 * @see #ackReceived(int)
 	 * @see #fullThrottle()
 	 * @see #setChunksPerSecond(int)
+	 * @see StreamAckInboundMessageHandler
 	 */
 	void ackRequired();
 

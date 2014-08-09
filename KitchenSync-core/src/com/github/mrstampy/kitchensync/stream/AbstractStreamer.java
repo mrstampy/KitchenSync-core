@@ -362,7 +362,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 			return;
 		}
 
-		int id = KiSyUtils.convertToInt(ackChunk);
+		int id = StreamerAckRegister.convertToInt(ackChunk);
 
 		if (id == sumOfBytesInChunk) {
 			ackLatch.countDown();
@@ -565,6 +565,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @throws InterruptedException
 	 */
 	protected void sendChunk(byte[] chunk) throws InterruptedException {
+		if (isAckRequired()) StreamerAckRegister.add(StreamerAckRegister.convertToInt(chunk), this);
+
 		ChannelFuture cf = channel.send(chunk, destination);
 
 		if (isFullThrottle()) {
