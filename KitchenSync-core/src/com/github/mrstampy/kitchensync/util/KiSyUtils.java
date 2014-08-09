@@ -21,6 +21,8 @@ package com.github.mrstampy.kitchensync.util;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+import com.github.mrstampy.kitchensync.stream.Streamer;
+
 /**
  * The Class KiSyUtils.
  */
@@ -39,6 +41,23 @@ public class KiSyUtils {
 	 */
 	public static String toMillis(Long nanos) {
 		return new BigDecimal(nanos).divide(ONE_MILLION, 3, RoundingMode.HALF_UP).toPlainString();
+	}
+	
+	/**
+	 * Convenience method to sum the bytes of the given byte array.
+	 * 
+	 * @param chunk
+	 * @return
+	 * @see Streamer#ackReceived(int)
+	 */
+	public static int convertToInt(byte[] chunk) {
+		int id = 0;
+		
+		for(byte b : chunk) {
+			id += b;
+		}
+		
+		return id;
 	}
 	
 	private KiSyUtils() {
