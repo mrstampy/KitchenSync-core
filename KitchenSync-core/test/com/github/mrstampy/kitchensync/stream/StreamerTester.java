@@ -85,7 +85,7 @@ public class StreamerTester {
 	public void message() throws Exception {
 		streamer = getBufferedInputStreamStreamer();
 		// streamer.setChunksPerSecond(10000);
-//		streamer.ackRequired();
+		streamer.ackRequired();
 		startMonitorService();
 
 		stream();
