@@ -45,11 +45,11 @@ import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	private static final Logger log = LoggerFactory.getLogger(BufferedInputStreamStreamer.class);
 
-	private BufferedInputStream in;
+	protected BufferedInputStream in;
 
-	private Scheduler svc = Schedulers.from(Executors.newSingleThreadExecutor());
-	private Subscription sub;
-	private CountDownLatch latch;
+	protected Scheduler svc = Schedulers.from(Executors.newSingleThreadExecutor());
+	protected Subscription sub;
+	protected CountDownLatch latch;
 
 	private boolean finishOnEmptyStream = true;
 
@@ -191,7 +191,10 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		init();
 	}
 
-	private void init() {
+	/**
+	 * Initializes state for the start of streaming.
+	 */
+	protected void init() {
 		in.mark((int) size());
 		sent.set(0);
 		complete.set(false);
@@ -199,15 +202,24 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		countdownLatch();
 	}
 
-	private void unsubscribe() {
+	/**
+	 * Unsubscribes from {@link #sub} when not {@link #isFinishOnEmptyStream()}.
+	 */
+	protected void unsubscribe() {
 		if (sub != null) sub.unsubscribe();
 	}
 
-	private void countdownLatch() {
+	/**
+	 * Counts down {@link #latch} when not {@link #isFinishOnEmptyStream()}.
+	 */
+	protected void countdownLatch() {
 		if (latch != null) latch.countDown();
 	}
 
-	private void startWaitForMore() {
+	/**
+	 * Starts the wait for more bytes thread when not {@link #isFinishOnEmptyStream()}
+	 */
+	protected void startWaitForMore() {
 		sub = svc.createWorker().schedulePeriodically(new Action0() {
 
 			@Override
