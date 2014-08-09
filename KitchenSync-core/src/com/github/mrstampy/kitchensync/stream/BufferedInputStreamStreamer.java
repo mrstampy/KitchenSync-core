@@ -108,13 +108,13 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 
 		if (remaining == 0 && !isFinishOnEmptyStream()) {
 			startWaitForMore();
+			latch = new CountDownLatch(1);
 
 			// stop the scheduler
 			if (isChunksPerSecond()) return null;
 
 			// wait till bytes are available, streaming is cancelled
 			// or an error occurs
-			latch = new CountDownLatch(1);
 			latch.await();
 
 			remaining = (int) remaining();
