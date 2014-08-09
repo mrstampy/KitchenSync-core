@@ -33,9 +33,8 @@ import java.util.concurrent.TimeoutException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// TODO: Auto-generated Javadoc
 /**
- * The Class StreamerFuture.
+ * The Class StreamerFuture used in the {@link AbstractStreamer} implementation.
  */
 public class StreamerFuture implements ChannelFuture {
 	private static final Logger log = LoggerFactory.getLogger(StreamerFuture.class);
@@ -44,16 +43,17 @@ public class StreamerFuture implements ChannelFuture {
 	private boolean cancelled;
 	private boolean done;
 	private Throwable cause;
-	private Streamer<?> streamer;
+	protected Streamer<?> streamer;
 
-	private List<GenericFutureListener<ChannelFuture>> listeners = new ArrayList<GenericFutureListener<ChannelFuture>>();
+	protected List<GenericFutureListener<ChannelFuture>> listeners = new ArrayList<GenericFutureListener<ChannelFuture>>();
 
-	private CountDownLatch latch = new CountDownLatch(1);
+	protected CountDownLatch latch = new CountDownLatch(1);
 
 	/**
 	 * The Constructor.
 	 *
-	 * @param streamer the streamer
+	 * @param streamer
+	 *          the streamer
 	 */
 	public StreamerFuture(Streamer<?> streamer) {
 		this.streamer = streamer;
@@ -62,7 +62,8 @@ public class StreamerFuture implements ChannelFuture {
 	/**
 	 * Finished.
 	 *
-	 * @param success the success
+	 * @param success
+	 *          the success
 	 */
 	void finished(boolean success) {
 		finished(success, null);
@@ -71,8 +72,10 @@ public class StreamerFuture implements ChannelFuture {
 	/**
 	 * Finished.
 	 *
-	 * @param success the success
-	 * @param t the t
+	 * @param success
+	 *          the success
+	 * @param t
+	 *          the t
 	 */
 	void finished(boolean success, Throwable t) {
 		setDone(true);
@@ -82,7 +85,9 @@ public class StreamerFuture implements ChannelFuture {
 		finish();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#isSuccess()
 	 */
 	@Override
@@ -90,7 +95,9 @@ public class StreamerFuture implements ChannelFuture {
 		return success;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#isCancellable()
 	 */
 	@Override
@@ -98,7 +105,9 @@ public class StreamerFuture implements ChannelFuture {
 		return true;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#cause()
 	 */
 	@Override
@@ -106,15 +115,20 @@ public class StreamerFuture implements ChannelFuture {
 		return cause;
 	}
 
-	/* (non-Javadoc)
-	 * @see io.netty.util.concurrent.Future#await(long, java.util.concurrent.TimeUnit)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see io.netty.util.concurrent.Future#await(long,
+	 * java.util.concurrent.TimeUnit)
 	 */
 	@Override
 	public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
 		return latch.await(timeout, unit);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#await(long)
 	 */
 	@Override
@@ -122,8 +136,11 @@ public class StreamerFuture implements ChannelFuture {
 		return await(timeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
-	/* (non-Javadoc)
-	 * @see io.netty.util.concurrent.Future#awaitUninterruptibly(long, java.util.concurrent.TimeUnit)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see io.netty.util.concurrent.Future#awaitUninterruptibly(long,
+	 * java.util.concurrent.TimeUnit)
 	 */
 	@Override
 	public boolean awaitUninterruptibly(long timeout, TimeUnit unit) {
@@ -137,7 +154,9 @@ public class StreamerFuture implements ChannelFuture {
 		return false;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#awaitUninterruptibly(long)
 	 */
 	@Override
@@ -145,7 +164,9 @@ public class StreamerFuture implements ChannelFuture {
 		return awaitUninterruptibly(timeoutMillis, TimeUnit.MILLISECONDS);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#getNow()
 	 */
 	@Override
@@ -153,17 +174,23 @@ public class StreamerFuture implements ChannelFuture {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.util.concurrent.Future#cancel(boolean)
 	 */
 	@Override
 	public boolean cancel(boolean mayInterruptIfRunning) {
 		streamer.cancel();
 
+		setCancelled(true);
+
 		return true;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.util.concurrent.Future#isCancelled()
 	 */
 	@Override
@@ -171,7 +198,9 @@ public class StreamerFuture implements ChannelFuture {
 		return cancelled;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.util.concurrent.Future#isDone()
 	 */
 	@Override
@@ -179,7 +208,9 @@ public class StreamerFuture implements ChannelFuture {
 		return done;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.util.concurrent.Future#get()
 	 */
 	@Override
@@ -187,7 +218,9 @@ public class StreamerFuture implements ChannelFuture {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.util.concurrent.Future#get(long, java.util.concurrent.TimeUnit)
 	 */
 	@Override
@@ -195,7 +228,9 @@ public class StreamerFuture implements ChannelFuture {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.channel.ChannelFuture#channel()
 	 */
 	@Override
@@ -203,8 +238,11 @@ public class StreamerFuture implements ChannelFuture {
 		return streamer.getChannel().getChannel();
 	}
 
-	/* (non-Javadoc)
-	 * @see io.netty.channel.ChannelFuture#addListener(io.netty.util.concurrent.GenericFutureListener)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see io.netty.channel.ChannelFuture#addListener(io.netty.util.concurrent.
+	 * GenericFutureListener)
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -213,8 +251,11 @@ public class StreamerFuture implements ChannelFuture {
 		return this;
 	}
 
-	/* (non-Javadoc)
-	 * @see io.netty.channel.ChannelFuture#addListeners(io.netty.util.concurrent.GenericFutureListener[])
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see io.netty.channel.ChannelFuture#addListeners(io.netty.util.concurrent.
+	 * GenericFutureListener[])
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
@@ -226,8 +267,12 @@ public class StreamerFuture implements ChannelFuture {
 		return this;
 	}
 
-	/* (non-Javadoc)
-	 * @see io.netty.channel.ChannelFuture#removeListener(io.netty.util.concurrent.GenericFutureListener)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * io.netty.channel.ChannelFuture#removeListener(io.netty.util.concurrent.
+	 * GenericFutureListener)
 	 */
 	@Override
 	public ChannelFuture removeListener(GenericFutureListener<? extends Future<? super Void>> listener) {
@@ -235,8 +280,12 @@ public class StreamerFuture implements ChannelFuture {
 		return this;
 	}
 
-	/* (non-Javadoc)
-	 * @see io.netty.channel.ChannelFuture#removeListeners(io.netty.util.concurrent.GenericFutureListener[])
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * io.netty.channel.ChannelFuture#removeListeners(io.netty.util.concurrent
+	 * .GenericFutureListener[])
 	 */
 	@Override
 	public ChannelFuture removeListeners(GenericFutureListener<? extends Future<? super Void>>... listeners) {
@@ -247,7 +296,9 @@ public class StreamerFuture implements ChannelFuture {
 		return this;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.channel.ChannelFuture#sync()
 	 */
 	@Override
@@ -256,7 +307,9 @@ public class StreamerFuture implements ChannelFuture {
 		return this;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.channel.ChannelFuture#syncUninterruptibly()
 	 */
 	@Override
@@ -271,7 +324,9 @@ public class StreamerFuture implements ChannelFuture {
 		return this;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.channel.ChannelFuture#await()
 	 */
 	@Override
@@ -279,7 +334,9 @@ public class StreamerFuture implements ChannelFuture {
 		return sync();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see io.netty.channel.ChannelFuture#awaitUninterruptibly()
 	 */
 	@Override
@@ -287,7 +344,10 @@ public class StreamerFuture implements ChannelFuture {
 		return syncUninterruptibly();
 	}
 
-	private void finish() {
+	/**
+	 * Notifies listeners and counts the latch down.
+	 */
+	protected void finish() {
 		for (GenericFutureListener<ChannelFuture> l : listeners) {
 			try {
 				l.operationComplete(this);
@@ -302,7 +362,8 @@ public class StreamerFuture implements ChannelFuture {
 	/**
 	 * Sets the cause.
 	 *
-	 * @param cause the cause
+	 * @param cause
+	 *          the cause
 	 */
 	public void setCause(Throwable cause) {
 		this.cause = cause;
@@ -311,7 +372,8 @@ public class StreamerFuture implements ChannelFuture {
 	/**
 	 * Sets the success.
 	 *
-	 * @param success the success
+	 * @param success
+	 *          the success
 	 */
 	public void setSuccess(boolean success) {
 		this.success = success;
@@ -320,7 +382,8 @@ public class StreamerFuture implements ChannelFuture {
 	/**
 	 * Sets the cancelled.
 	 *
-	 * @param cancelled the cancelled
+	 * @param cancelled
+	 *          the cancelled
 	 */
 	public void setCancelled(boolean cancelled) {
 		this.cancelled = cancelled;
@@ -329,7 +392,8 @@ public class StreamerFuture implements ChannelFuture {
 	/**
 	 * Sets the done.
 	 *
-	 * @param done the done
+	 * @param done
+	 *          the done
 	 */
 	public void setDone(boolean done) {
 		this.done = done;
