@@ -196,6 +196,10 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		sent.set(0);
 		complete.set(false);
 		if (sub != null) sub.unsubscribe();
+		countdownLatch();
+	}
+
+	private void countdownLatch() {
 		if (latch != null) latch.countDown();
 	}
 
@@ -207,7 +211,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 				long remaining = remaining();
 				if (remaining == 0) return;
 
-				latch.countDown();
+				countdownLatch();
 				if (isChunksPerSecond() && !isComplete()) stream();
 				sub.unsubscribe();
 			}
