@@ -25,7 +25,6 @@ import java.net.InetSocketAddress;
 import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
-import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
  * The Interface Streamer defines the methods to stream data to a remote socket
@@ -46,7 +45,7 @@ public interface Streamer<MSG> {
 	 * 'StreamAck:'. The suffix is the sum of the btyes of the message being
 	 * acknowledged.
 	 * 
-	 * @see KiSyUtils#convertToLong(byte[])
+	 * @see StreamerAckRegister#convertToLong(byte[])
 	 * @see Streamer#ackRequired()
 	 */
 	public static final String ACK_PREFIX = "StreamAck:";
@@ -118,7 +117,7 @@ public interface Streamer<MSG> {
 	 * information can be obtained from the ChannelFuture associated with the
 	 * streaming ({@link #getFuture()}).
 	 * 
-	 * @return
+	 * @return true if complete
 	 * @see #getFuture()
 	 */
 	boolean isComplete();
@@ -126,7 +125,7 @@ public interface Streamer<MSG> {
 	/**
 	 * Returns true if the Streamer is currently streaming.
 	 * 
-	 * @return
+	 * @return true if streaming
 	 */
 	boolean isStreaming();
 
@@ -200,7 +199,7 @@ public interface Streamer<MSG> {
 	 * rate. Throws an {@link IllegalStateException} if already streaming.<br>
 	 * <br>
 	 * 
-	 * During testing some packet loss occurs for values > 1000. If message
+	 * During testing some packet loss occurs for values &gt; 1000. If message
 	 * fidelity is a top priority then {@link #ackRequired()} is more suitable.<br>
 	 * <br>
 	 *
@@ -216,7 +215,7 @@ public interface Streamer<MSG> {
 	 * {@link #fullThrottle()} or {@link #ackRequired()} has been previously
 	 * invoked.
 	 * 
-	 * @return
+	 * @return the chunks per second
 	 */
 	int getChunksPerSecond();
 
@@ -224,7 +223,7 @@ public interface Streamer<MSG> {
 	 * Returns true if the value of {@link #getChunksPerSecond()} is greater than
 	 * zero.
 	 * 
-	 * @return
+	 * @return true if the mode is chunks per second
 	 * @see #isAckRequired()
 	 * @see #isFullThrottle()
 	 */
@@ -253,8 +252,7 @@ public interface Streamer<MSG> {
 	/**
 	 * Returns true if the streamer is running at full throttle.
 	 *
-	 * @return true, if checks if is full throttle
-	 * @see #fullThrottle();
+	 * @return true, if is full throttle
 	 */
 	boolean isFullThrottle();
 
@@ -263,7 +261,7 @@ public interface Streamer<MSG> {
 	 * {@link #stream(Object)} then each chunk sent will require an
 	 * acknowledgement consisting of the sum of the bytes in the sent chunk. If an
 	 * acknowledgement has not been received within 10 seconds the last chunk is
-	 * resent, continuing to do so until {@link #ackReceived(int)} or the
+	 * resent, continuing to do so until {@link #ackReceived(long)} or the
 	 * streaming is {@link #cancel()}led. Throws an {@link IllegalStateException}
 	 * if already streaming.<br>
 	 * <br>
@@ -286,7 +284,7 @@ public interface Streamer<MSG> {
 	/**
 	 * Returns true if acknowledgement is required for each chunk sent.
 	 *
-	 * @return true, if checks if is ack required
+	 * @return true, if is ack required
 	 * @see #ackRequired()
 	 */
 	boolean isAckRequired();
@@ -301,7 +299,7 @@ public interface Streamer<MSG> {
 	 *
 	 * @param sumOfBytesInChunk
 	 *          the sum of bytes in chunk
-	 * @see KiSyUtils#convertToLong(byte[])
+	 * @see StreamerAckRegister#convertToLong(byte[])
 	 */
 	void ackReceived(long sumOfBytesInChunk);
 }

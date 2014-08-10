@@ -35,7 +35,7 @@ public class KiSyUtils {
 	 *
 	 * @param nanos
 	 *          the nanos
-	 * @return the string
+	 * @return the string representation in milliseconds, to 3 decimals.
 	 */
 	public static String toMillis(Long nanos) {
 		return new BigDecimal(nanos).divide(ONE_MILLION, 3, RoundingMode.HALF_UP).toPlainString();
@@ -45,7 +45,7 @@ public class KiSyUtils {
 	 * Sleep for the specified number of milliseconds. Interrupted exceptions are
 	 * ignored.
 	 * 
-	 * @param time
+	 * @param time in millis
 	 */
 	public static void snooze(long time) {
 		try {
@@ -58,8 +58,8 @@ public class KiSyUtils {
 	 * Sleep for the specified number of milli and (up to one million)
 	 * nanoseconds. Interrupted exceptions are ignored.
 	 * 
-	 * @param time
-	 * @param nanos
+	 * @param time in millis
+	 * @param nanos the nanoseconds
 	 */
 	public static void snooze(long time, int nanos) {
 		try {

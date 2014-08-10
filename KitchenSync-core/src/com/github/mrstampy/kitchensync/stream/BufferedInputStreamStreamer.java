@@ -239,7 +239,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	 * empty. If false then finalization will occur via a call to
 	 * {@link #cancel()} or on error.
 	 * 
-	 * @return
+	 * @return true if empty stream indicates the end of message
 	 */
 	public boolean isFinishOnEmptyStream() {
 		return finishOnEmptyStream;
@@ -248,6 +248,8 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	/**
 	 * Set to false to pause sending if the stream is currently empty. If true
 	 * (the default) the message finalization will occur when the stream is empty.
+	 * 
+	 * @param finishOnEmptyStream true if empty stream indicates the end of message
 	 */
 	public void setFinishOnEmptyStream(boolean finishOnEmptyStream) {
 		this.finishOnEmptyStream = finishOnEmptyStream;

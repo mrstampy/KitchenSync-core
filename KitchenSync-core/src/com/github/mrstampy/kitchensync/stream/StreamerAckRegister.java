@@ -140,7 +140,7 @@ public class StreamerAckRegister {
 	 * @param chunk
 	 *          the chunk
 	 * @return the long
-	 * @see Streamer#ackReceived(int)
+	 * @see Streamer#ackReceived(long)
 	 */
 	public static long convertToLong(byte[] chunk) {
 		long id = 0;

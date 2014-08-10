@@ -71,6 +71,8 @@ public class StreamerTester {
 
 	/**
 	 * Specify the large file to stream.
+	 * 
+	 * @param file the large file's path and name
 	 */
 	public StreamerTester(String file) {
 		this.file = file;
