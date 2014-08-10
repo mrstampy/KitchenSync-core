@@ -42,6 +42,16 @@
 <a name="a-java-library-for-distributed-communication" class="anchor" href="#a-java-library-for-distributed-communication"><span class="octicon octicon-link"></span></a>A Java Library for Distributed Communication</h1>
 
 <h1>
+<a name="release-21---august-10-2014" class="anchor" href="#release-21---august-10-2014"><span class="octicon octicon-link"></span></a>Release 2.1 - August 10, 2014</h1>
+
+<ul>
+<li>Added <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/Streamer.java">Streamer</a> architecture to stream arbitrarily large amounts of data</li>
+<li>Three modes of streaming - full throttle, chunks per second and ack required</li>
+<li>Two implementations: <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/BufferedInputStreamStreamer.java">BufferedInputStreamStreamer</a> and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/FileStreamer.java">FileStreamer</a>
+</li>
+<li>
+<a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test/stream/StreamerTester.java">Test class</a> to demonstrate usage</li>
+</ul><h1>
 <a name="release-20---august-2-2014" class="anchor" href="#release-20---august-2-2014"><span class="octicon octicon-link"></span></a>Release 2.0 - August 2, 2014</h1>
 
 <ul>
@@ -52,7 +62,7 @@
 <a name="quickstart" class="anchor" href="#quickstart"><span class="octicon octicon-link"></span></a>Quickstart</h1>
 
 <ul>
-<li>Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.0"/&gt;</li>
+<li>Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.1"/&gt;</li>
 <li><a href="https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test">Example code</a></li>
 </ul><h1>
 <a name="kitchensync-architecture" class="anchor" href="#kitchensync-architecture"><span class="octicon octicon-link"></span></a>KitchenSync Architecture</h1>
