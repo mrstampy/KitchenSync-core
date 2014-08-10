@@ -82,7 +82,7 @@ public class StreamerTester {
 	 *           the exception
 	 */
 	public void message() throws Exception {
-		streamer = getBufferedInputStreamStreamer();
+		streamer = getFileStreamer();
 		// streamer.setChunksPerSecond(10000);
 		streamer.ackRequired();
 		startMonitorService();
@@ -155,9 +155,10 @@ public class StreamerTester {
 			public void messageReceived(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
 				received.addAndGet(message.length);
 				
-				int sumOfBytes = StreamerAckRegister.convertToInt(message); 
-
-				channel.send(StreamerAckRegister.createAckResponse(sumOfBytes), sender);
+				if(streamer.isAckRequired()) {
+					long sumOfBytes = StreamerAckRegister.convertToLong(message); 
+					channel.send(StreamerAckRegister.createAckResponse(sumOfBytes), sender);
+				}
 			}
 
 			@Override

@@ -46,7 +46,7 @@ public interface Streamer<MSG> {
 	 * 'StreamAck:'. The suffix is the sum of the btyes of the message being
 	 * acknowledged.
 	 * 
-	 * @see KiSyUtils#convertToInt(byte[])
+	 * @see KiSyUtils#convertToLong(byte[])
 	 * @see Streamer#ackRequired()
 	 */
 	public static final String ACK_PREFIX = "StreamAck:";
@@ -276,7 +276,7 @@ public interface Streamer<MSG> {
 	 * Throughput on a single host using 2048 byte packets is on the order of 18
 	 * megabytes/sec.
 	 * 
-	 * @see #ackReceived(int)
+	 * @see #ackReceived(long)
 	 * @see #fullThrottle()
 	 * @see #setChunksPerSecond(int)
 	 * @see StreamAckInboundMessageHandler
@@ -301,7 +301,7 @@ public interface Streamer<MSG> {
 	 *
 	 * @param sumOfBytesInChunk
 	 *          the sum of bytes in chunk
-	 * @see KiSyUtils#convertToInt(byte[])
+	 * @see KiSyUtils#convertToLong(byte[])
 	 */
-	void ackReceived(int sumOfBytesInChunk);
+	void ackReceived(long sumOfBytesInChunk);
 }

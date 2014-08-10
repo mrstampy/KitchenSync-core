@@ -25,7 +25,7 @@ import java.math.RoundingMode;
  * The Class KiSyUtils.
  */
 public class KiSyUtils {
-	
+
 	/** The Constant ONE_MILLION. */
 	public static final BigDecimal ONE_MILLION = new BigDecimal(1000000);
 
@@ -40,7 +40,34 @@ public class KiSyUtils {
 	public static String toMillis(Long nanos) {
 		return new BigDecimal(nanos).divide(ONE_MILLION, 3, RoundingMode.HALF_UP).toPlainString();
 	}
-	
+
+	/**
+	 * Sleep for the specified number of milliseconds. Interrupted exceptions are
+	 * ignored.
+	 * 
+	 * @param time
+	 */
+	public static void snooze(long time) {
+		try {
+			Thread.sleep(time);
+		} catch (InterruptedException e) {
+		}
+	}
+
+	/**
+	 * Sleep for the specified number of milli and (up to one million)
+	 * nanoseconds. Interrupted exceptions are ignored.
+	 * 
+	 * @param time
+	 * @param nanos
+	 */
+	public static void snooze(long time, int nanos) {
+		try {
+			Thread.sleep(time, nanos);
+		} catch (InterruptedException e) {
+		}
+	}
+
 	private KiSyUtils() {
 	}
 

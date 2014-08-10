@@ -75,7 +75,7 @@ public class StreamAckInboundMessageHandler extends AbstractInboundKiSyHandler<b
 	@Override
 	protected void onReceive(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
 		String s = new String(message);
-		Integer sumOfBytes = parseMessage(s);
+		Long sumOfBytes = parseMessage(s);
 
 		if (sumOfBytes == null) return;
 
@@ -89,11 +89,11 @@ public class StreamAckInboundMessageHandler extends AbstractInboundKiSyHandler<b
 		streamer.ackReceived(sumOfBytes);
 	}
 
-	private Integer parseMessage(String message) {
+	private Long parseMessage(String message) {
 		try {
 			String s = message.substring(Streamer.ACK_PREFIX.length(), message.length());
 
-			return Integer.parseInt(s);
+			return Long.parseLong(s);
 		} catch (Exception e) {
 			log.error("Could not obtain sum of bytes from {}", message, e);
 		}

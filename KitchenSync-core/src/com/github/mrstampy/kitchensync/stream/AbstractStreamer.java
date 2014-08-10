@@ -91,8 +91,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private int chunksPerSecond = -1;
 
-	protected byte[] ackChunk;
-
+	protected Long ackKey;
 	protected CountDownLatch ackLatch;
 
 	protected long start;
@@ -248,6 +247,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		switch (type) {
 		case ACK_REQUIRED:
+			// Necessary for multiple use in testing
+			KiSyUtils.snooze(0);
 			sendAndAwaitAck();
 			break;
 		case CHUNKS_PER_SECOND:
@@ -354,21 +355,17 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @see com.github.mrstampy.kitchensync.stream.Streamer#ackReceived(int)
 	 */
 	@Override
-	public void ackReceived(int sumOfBytesInChunk) {
+	public void ackReceived(long sumOfBytesInChunk) {
 		if (!isAckRequired()) return;
+
+		byte[] ackChunk = StreamerAckRegister.getChunk(sumOfBytesInChunk);
 
 		if (ackChunk == null) {
 			log.warn("No last chunk to acknowledge");
 			return;
 		}
 
-		int id = StreamerAckRegister.convertToInt(ackChunk);
-
-		if (id == sumOfBytesInChunk) {
-			ackLatch.countDown();
-		} else {
-			log.warn("Ack byte sums do not match, ignoring: {} != {}", id, sumOfBytesInChunk);
-		}
+		ackLatch.countDown();
 	}
 
 	/**
@@ -401,11 +398,13 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		return remaining > getChunkSize() ? chunkArray : new byte[remaining];
 	}
 
+	// The service activated when StreamerType is CHUNKS_PER_SECOND
 	private void scheduledService() {
 		BigDecimal secondsPerChunk = BigDecimal.ONE.divide(new BigDecimal(chunksPerSecond), 6, RoundingMode.HALF_UP);
 
 		BigDecimal microsPerChunk = secondsPerChunk.multiply(KiSyUtils.ONE_MILLION);
 
+		unsubscribe();
 		sub = svc.createWorker().schedulePeriodically(new Action0() {
 
 			@Override
@@ -417,7 +416,9 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		}, 0, microsPerChunk.longValue(), TimeUnit.MICROSECONDS);
 	}
 
+	// The service activated when StreamerType is FULL_THROTTLE
 	private void fullThrottleService() {
+		unsubscribe();
 		sub = svc.createWorker().schedule(new Action0() {
 
 			@Override
@@ -429,15 +430,16 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		});
 	}
 
+	// The service activated when StreamerType is ACK_REQUIRED
 	private void sendAndAwaitAck() {
+		unsubscribe();
 		sub = svc.createWorker().schedule(new Action0() {
 
 			@Override
 			public void call() {
 				if (!isStreaming()) return;
 
-				ackLatch = new CountDownLatch(1);
-				ackChunk = writeOnce();
+				byte[] ackChunk = writeOnce();
 
 				if (ackChunk == null) return;
 
@@ -446,16 +448,24 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		});
 	}
 
+	// The service activated when the last chunk has not been acknowledged
 	private void resendLast() {
+		unsubscribe();
 		sub = svc.createWorker().schedule(new Action0() {
 
 			@Override
 			public void call() {
+				if (!isStreaming()) return;
+				
+				byte[] ackChunk = StreamerAckRegister.getChunk(ackKey);
+
+				if(ackChunk == null) {
+					log.error("No last chunk found in the registry");
+					return;
+				}
+				
 				sent.addAndGet(-ackChunk.length);
 
-				if (!isStreaming()) return;
-
-				ackLatch = new CountDownLatch(1);
 				processChunk(ackChunk);
 
 				awaitAck();
@@ -463,7 +473,10 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		});
 	}
 
+	// The service activated to await acknowledgement and to invoke another send
+	// and wait or a resend of the last message
 	private void awaitAck() {
+		unsubscribe();
 		sub = svc.createWorker().schedule(new Action0() {
 
 			@Override
@@ -482,6 +495,10 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 				}
 			}
 		});
+	}
+
+	private void unsubscribe() {
+		if (sub != null) sub.unsubscribe();
 	}
 
 	/**
@@ -535,11 +552,13 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 *          the chunk
 	 */
 	protected void processChunk(byte[] chunk) {
+		// null chunk == autopause
 		if (chunk == null) {
 			pause();
 			return;
 		}
 
+		// empty chunk == EOM
 		if (chunk.length == 0) {
 			pause();
 			finish(true, null);
@@ -551,10 +570,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 			}
 		}
 
-		try {
-			Thread.sleep(0); // necessary for packet fidelity when @ full throttle
-		} catch (InterruptedException e) {
-		}
+		KiSyUtils.snooze(0); // necessary for packet fidelity when @ full throttle
 	}
 
 	/**
@@ -565,7 +581,10 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @throws InterruptedException
 	 */
 	protected void sendChunk(byte[] chunk) throws InterruptedException {
-		if (isAckRequired()) StreamerAckRegister.add(StreamerAckRegister.convertToInt(chunk), this);
+		if (isAckRequired()) {
+			ackKey = StreamerAckRegister.add(chunk, this);
+			ackLatch = new CountDownLatch(1);
+		}
 
 		ChannelFuture cf = channel.send(chunk, destination);
 
@@ -593,8 +612,12 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		complete.set(true);
 		future.finished(success, t);
 		future = new StreamerFuture(this);
-		ackChunk = null;
-		ackLatch = null;
+
+		if (ackLatch != null) {
+			ackLatch.countDown();
+			ackLatch = null;
+		}
+		unsubscribe();
 	}
 
 	/*
