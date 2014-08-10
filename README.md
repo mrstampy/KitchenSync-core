@@ -1,5 +1,12 @@
 # A Java Library for Distributed Communication
 
+# Release 2.1 - August 10, 2014
+
+* Added [Streamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/Streamer.java) architecture to stream arbitrarily large amounts of data
+* Three modes of streaming - full throttle, chunks per second and ack required
+* Two implementations: [BufferedInputStreamStreamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/BufferedInputStreamStreamer.java) and [FileStreamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/FileStreamer.java)
+* [Test class](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test/stream/StreamerTester.java) to demonstrate usage
+
 # Release 2.0 - August 2, 2014
 
 * Initial release
