@@ -16,7 +16,7 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  * 
  */
-package com.github.mrstampy.kitchensync.stream;
+package com.github.mrstampy.kitchensync.test.stream;
 
 import io.netty.channel.ChannelFuture;
 
@@ -36,6 +36,10 @@ import org.slf4j.LoggerFactory;
 import com.github.mrstampy.kitchensync.message.inbound.ByteArrayInboundMessageManager;
 import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.BufferedInputStreamStreamer;
+import com.github.mrstampy.kitchensync.stream.FileStreamer;
+import com.github.mrstampy.kitchensync.stream.Streamer;
+import com.github.mrstampy.kitchensync.stream.StreamerAckRegister;
 import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 import com.github.mrstampy.kitchensync.test.channel.ByteArrayChannel;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
