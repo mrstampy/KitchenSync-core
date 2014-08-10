@@ -15,7 +15,7 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.0"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.1"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
 
 # KitchenSync Architecture
