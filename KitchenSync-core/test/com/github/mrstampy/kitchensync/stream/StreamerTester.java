@@ -44,6 +44,11 @@ import com.github.mrstampy.kitchensync.util.KiSyUtils;
  * The Class StreamerTester streams a large file requiring
  * {@link Streamer#ackRequired()}. The file is sent 3 times and the results are
  * fully logged at debug level.
+ * 
+ * @see StreamerAckRegister
+ * @see StreamAckInboundMessageHandler
+ * @see Streamer#ackRequired()
+ * @see Streamer#ackReceived(long)
  */
 @SuppressWarnings("unused")
 public class StreamerTester {
@@ -61,7 +66,7 @@ public class StreamerTester {
 	private String file;
 
 	/**
-	 * The Constructor.
+	 * Specify the large file to stream.
 	 */
 	public StreamerTester(String file) {
 		this.file = file;
@@ -83,7 +88,7 @@ public class StreamerTester {
 	 */
 	public void message() throws Exception {
 		streamer = getFileStreamer();
-		// streamer.setChunksPerSecond(10000);
+//		streamer.setChunksPerSecond(10000);
 		streamer.ackRequired();
 		startMonitorService();
 
