@@ -21,7 +21,10 @@ package com.github.mrstampy.kitchensync.stream;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The Class StreamerHeader provides the ability to determine if a message
@@ -31,7 +34,7 @@ import java.util.Arrays;
  * 
  * @see Streamer#setUseHeader(boolean)
  */
-public class StreamerHeader {
+public class StreamerHeader implements Comparable<StreamerHeader>{
 
 	/** The Constant SEQUENCE_HEADER, 'Sequence:'. */
 	public static final String SEQUENCE_HEADER = "Sequence:";
@@ -78,6 +81,11 @@ public class StreamerHeader {
 	 */
 	public byte[] getMessage() {
 		return message;
+	}
+
+	@Override
+	public int compareTo(StreamerHeader o) {
+		return (int)(getSequence() - o.getSequence());
 	}
 
 	private void setSequence(byte[] seqBytes) {
