@@ -40,6 +40,7 @@ import com.github.mrstampy.kitchensync.stream.BufferedInputStreamStreamer;
 import com.github.mrstampy.kitchensync.stream.FileStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 import com.github.mrstampy.kitchensync.stream.StreamerAckRegister;
+import com.github.mrstampy.kitchensync.stream.StreamerHeader;
 import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 import com.github.mrstampy.kitchensync.test.channel.ByteArrayChannel;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
@@ -94,7 +95,7 @@ public class StreamerTester {
 	 */
 	public void message() throws Exception {
 		streamer = getFileStreamer();
-//		streamer.setChunksPerSecond(10000);
+		streamer.setConcurrentThreads(3);
 		streamer.ackRequired();
 		startMonitorService();
 
@@ -119,6 +120,7 @@ public class StreamerTester {
 					new BigDecimal(streamer.size()), 6, RoundingMode.HALF_UP))).multiply(new BigDecimal(100));
 			log.info("Sent: {}, Received: {}, Packet loss: {} %", streamer.size(), received.get(), packetLoss.toPlainString());
 
+			KiSyUtils.snooze(100);
 			streamer.reset();
 			received.set(0);
 		}
@@ -164,12 +166,19 @@ public class StreamerTester {
 
 			@Override
 			public void messageReceived(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
-				received.addAndGet(message.length);
+				received.addAndGet(streamer.isUseHeader() ? message.length - StreamerHeader.HEADER_LENGTH : message.length);
 				
 				if(streamer.isAckRequired()) {
 					long sumOfBytes = StreamerAckRegister.convertToLong(message); 
 					channel.send(StreamerAckRegister.createAckResponse(sumOfBytes), sender);
 				}
+				
+				if(streamer.isUseHeader()) checkHeader(message);
+			}
+
+			private void checkHeader(byte[] message) {
+				StreamerHeader header = new StreamerHeader(message);
+				if(header.getSequence() % 100000 == 0) log.debug("Received sequence {}", header.getSequence());
 			}
 
 			@Override

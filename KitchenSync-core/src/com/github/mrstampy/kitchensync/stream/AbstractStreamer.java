@@ -24,6 +24,8 @@ import io.netty.util.concurrent.GenericFutureListener;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -33,9 +35,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import rx.Observable;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action0;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
@@ -49,6 +53,8 @@ import com.github.mrstampy.kitchensync.util.KiSyUtils;
  */
 public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	private static final Logger log = LoggerFactory.getLogger(AbstractStreamer.class);
+
+	public static final int DEFAULT_ACK_AWAIT = 1;
 
 	/**
 	 * The Enum StreamerType.
@@ -83,29 +89,33 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	protected StreamerFuture future;
 
 	/** The svc. */
-	protected Scheduler svc = Schedulers.from(Executors.newSingleThreadExecutor());
+	protected Scheduler svc = Schedulers.from(Executors.newCachedThreadPool());
 
 	/** The active subscription. */
 	protected Subscription sub;
 
-	/**
-	 * The array returned when {@link #remaining()} &ge; {@link #getChunkSize()}.
-	 */
-	protected byte[] chunkArray;
-
 	private int chunksPerSecond = -1;
 
 	/** The ack key. */
-	protected Long ackKey;
+	protected List<Long> ackKeys = new ArrayList<Long>();
 
 	/** The ack latch. */
-	protected CountDownLatch ackLatch;
+	protected CountDownLatch latch;
 
 	/** The start. */
 	protected long start;
 
 	/** The type. */
 	protected StreamerType type = StreamerType.FULL_THROTTLE;
+
+	private int concurrentThreads = DEFAULT_CONCURRENT_THREADS;
+
+	private int ackAwait = DEFAULT_ACK_AWAIT;
+	private TimeUnit ackAwaitUnit = TimeUnit.SECONDS;
+
+	private boolean useHeader = concurrentThreads > 1;
+
+	protected AtomicLong sequence = new AtomicLong(0);
 
 	/**
 	 * The Constructor.
@@ -122,7 +132,6 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		setChunkSize(chunkSize);
 		setDestination(destination);
 		future = new StreamerFuture(this);
-		chunkArray = new byte[chunkSize];
 	}
 
 	/**
@@ -136,6 +145,14 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @see #processChunk(byte[])
 	 */
 	protected abstract byte[] getChunk() throws Exception;
+
+	protected byte[] getChunkWithHeader() throws Exception {
+		byte[] chunk = getChunk();
+
+		if (chunk == null || chunk.length == 0) return chunk;
+
+		return isUseHeader() ? StreamerHeader.addHeader(nextSequence(), chunk) : chunk;
+	}
 
 	/**
 	 * Prepare the specified message for streaming.
@@ -366,14 +383,11 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	public void ackReceived(long sumOfBytesInChunk) {
 		if (!isAckRequired()) return;
 
-		byte[] ackChunk = StreamerAckRegister.getChunk(sumOfBytesInChunk);
+		byte[] ackChunk = StreamerAckRegister.getChunk(sumOfBytesInChunk, getChannel().getPort());
 
-		if (ackChunk == null) {
-			log.warn("No last chunk to acknowledge");
-			return;
-		}
+		if (ackChunk == null) log.warn("No last chunk to acknowledge");
 
-		ackLatch.countDown();
+		if (latch != null) latch.countDown();
 	}
 
 	/**
@@ -396,14 +410,20 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	/**
 	 * Convenience method for subclasses to create the byte array for the next
-	 * chunk given the remaining number of bytes.
+	 * chunk given the remaining number of bytes. Factors in the header size if
+	 * {@link #isUseHeader()}.
 	 *
 	 * @param remaining
 	 *          the remaining
 	 * @return the byte[]
 	 */
 	protected byte[] createByteArray(int remaining) {
-		return remaining > getChunkSize() ? chunkArray : new byte[remaining];
+		int header = isUseHeader() ? StreamerHeader.HEADER_LENGTH : 0;
+		int chunkSize = getChunkSize() - header;
+
+		chunkSize = remaining > chunkSize ? chunkSize : remaining;
+
+		return new byte[chunkSize];
 	}
 
 	/**
@@ -420,7 +440,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 			@Override
 			public void call() {
 				if (isStreaming()) {
-					writeOnce();
+					fullThrottleServiceImpl();
 				}
 			}
 		}, 0, microsPerChunk.longValue(), TimeUnit.MICROSECONDS);
@@ -436,10 +456,27 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 			@Override
 			public void call() {
 				while (isStreaming()) {
-					writeOnce();
+					fullThrottleServiceImpl();
 				}
 			}
 		});
+	}
+
+	private void fullThrottleServiceImpl() {
+		try {
+			int latchCount = 0;
+			if (isAsync()) {
+				latchCount = sendChunksAsync();
+			} else {
+				byte[] chunk = writeOnce();
+				if (chunk != null && chunk.length > 0) latchCount++;
+			}
+
+			if (latchCount > 0 && isFullThrottle()) KiSyUtils.await(latch, 50, TimeUnit.MILLISECONDS);
+		} catch (Exception e) {
+			log.error("Unexpected exception", e);
+			finish(false, e);
+		}
 	}
 
 	/**
@@ -451,40 +488,82 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 			@Override
 			public void call() {
-				if (!isStreaming()) return;
-
-				byte[] ackChunk = writeOnce();
-
-				if (ackChunk == null) return;
-
-				awaitAck();
+				try {
+					sendAndAwaitAckImpl();
+				} catch (Exception e) {
+					log.error("Unexpected exception", e);
+				}
 			}
 		});
+	}
+
+	private void sendAndAwaitAckImpl() throws Exception {
+		if (!isStreaming()) return;
+
+		int count = 0;
+		if (isAsync()) {
+			count = sendChunksAsync();
+		} else {
+			byte[] ackChunk = writeOnce();
+			if (ackChunk == null) return;
+			count++;
+		}
+
+		if (count > 0) awaitAck();
+	}
+
+	private boolean isAsync() {
+		return getConcurrentThreads() > 1;
+	}
+
+	private int sendChunksAsync() throws Exception {
+		List<byte[]> chunks = new ArrayList<byte[]>();
+		for (int i = 0; i < getConcurrentThreads(); i++) {
+			byte[] chunk = getChunkWithHeader();
+			if (chunk != null) chunks.add(chunk);
+			if (chunk.length == 0) break;
+		}
+
+		if (chunks.isEmpty()) {
+			pause();
+			return 0;
+		}
+
+		int latchCount = getLatchCount(chunks);
+
+		if (latchCount > 0) latch = new CountDownLatch(latchCount);
+		processChunks(chunks);
+
+		return latchCount;
 	}
 
 	/**
 	 * The service activated when the last chunk has not been acknowledged
 	 */
 	protected void resendLast() {
+		if (!isStreaming()) return;
 		unsubscribe();
 		sub = svc.createWorker().schedule(new Action0() {
 
 			@Override
 			public void call() {
-				if (!isStreaming()) return;
+				if (!isStreaming() || ackKeys.isEmpty()) return;
 
-				byte[] ackChunk = StreamerAckRegister.getChunk(ackKey);
-
-				if (ackChunk == null) {
-					log.error("No last chunk found in the registry");
-					return;
+				List<byte[]> chunks = new ArrayList<byte[]>();
+				for (Long ackKey : ackKeys) {
+					byte[] ackChunk = StreamerAckRegister.getChunk(ackKey, getChannel().getPort());
+					if (ackChunk == null) {
+						log.warn("No last chunk found in the registry");
+					} else {
+						chunks.add(ackChunk);
+						sent.addAndGet(-ackChunk.length);
+					}
 				}
 
-				sent.addAndGet(-ackChunk.length);
+				int latchCount = getLatchCount(chunks);
+				processChunks(chunks);
 
-				processChunk(ackChunk);
-
-				awaitAck();
+				if (latchCount > 0) awaitAck();
 			}
 		});
 	}
@@ -494,25 +573,12 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * and wait or a resend of the last message
 	 */
 	protected void awaitAck() {
-		unsubscribe();
-		sub = svc.createWorker().schedule(new Action0() {
-
-			@Override
-			public void call() {
-				boolean ok = false;
-				try {
-					ok = ackLatch.await(10, TimeUnit.SECONDS);
-				} catch (InterruptedException e) {
-				}
-
-				if (ok) {
-					sendAndAwaitAck();
-				} else {
-					log.warn("No ack received for last packet, resending");
-					resendLast();
-				}
-			}
-		});
+		if (KiSyUtils.await(latch, ackAwait, ackAwaitUnit)) {
+			sendAndAwaitAck();
+		} else {
+			log.warn("No ack received for last packet, resending");
+			resendLast();
+		}
 	}
 
 	/**
@@ -554,13 +620,34 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	private byte[] writeImpl() throws Exception {
-		byte[] chunk = getChunk();
+		byte[] chunk = getChunkWithHeader();
 
 		if (!isStreaming()) return null;
+
+		if (chunk != null && chunk.length > 0) latch = new CountDownLatch(1);
 
 		processChunk(chunk);
 
 		return chunk;
+	}
+
+	protected void processChunks(List<byte[]> chunks) {
+		Observable.from(chunks, svc).subscribe(new Action1<byte[]>() {
+
+			@Override
+			public void call(byte[] t1) {
+				if (isStreaming()) processChunk(t1);
+			}
+		});
+	}
+
+	protected int getLatchCount(List<byte[]> chunks) {
+		int i = 0;
+		for (byte[] b : chunks) {
+			if (b.length > 0) i++;
+		}
+
+		return i;
 	}
 
 	/**
@@ -586,14 +673,9 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		// empty chunk == EOM
 		if (chunk.length == 0) {
-			pause();
 			finish(true, null);
-			profile();
 		} else {
-			try {
-				sendChunk(chunk);
-			} catch (InterruptedException e) {
-			}
+			sendChunk(chunk);
 		}
 
 		KiSyUtils.snooze(0); // necessary for packet fidelity when @ full throttle
@@ -608,21 +690,12 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @throws InterruptedException
 	 *           the interrupted exception
 	 */
-	protected void sendChunk(byte[] chunk) throws InterruptedException {
-		if (isAckRequired()) {
-			ackKey = StreamerAckRegister.add(chunk, this);
-			ackLatch = new CountDownLatch(1);
-		}
+	protected void sendChunk(byte[] chunk) {
+		if (isAckRequired()) ackKeys.add(StreamerAckRegister.add(chunk, this));
 
 		ChannelFuture cf = channel.send(chunk, destination);
 
-		if (isFullThrottle()) {
-			CountDownLatch latch = new CountDownLatch(1);
-			streamerListener.latch = latch;
-			cf.addListener(streamerListener);
-
-			latch.await(1, TimeUnit.SECONDS);
-		}
+		if (isFullThrottle()) cf.addListener(streamerListener);
 
 		sent.addAndGet(chunk.length);
 	}
@@ -636,17 +709,23 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @param t
 	 *          the exception, null if not applicable
 	 */
-	protected void finish(boolean success, Throwable t) {
+	protected synchronized void finish(boolean success, Throwable t) {
+		if (!isStreaming()) return;
 		streaming.set(false);
 		complete.set(true);
+
 		future.finished(success, t);
 		future = new StreamerFuture(this);
 
-		if (ackLatch != null) {
-			ackLatch.countDown();
-			ackLatch = null;
+		if (latch != null) {
+			long count = latch.getCount();
+			for (long i = 0; i < count; i++) {
+				latch.countDown();
+			}
+			latch = null;
 		}
 		unsubscribe();
+		profile();
 	}
 
 	/*
@@ -713,13 +792,79 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		this.destination = destination;
 	}
 
+	public int getConcurrentThreads() {
+		return concurrentThreads;
+	}
+
+	public void setConcurrentThreads(int concurrentThreads) {
+		if (concurrentThreads < 1) throw new IllegalArgumentException("Must be > 0: " + concurrentThreads);
+		this.concurrentThreads = concurrentThreads;
+
+		if (concurrentThreads > 1) setUseHeader(true);
+	}
+
+	public boolean isUseHeader() {
+		return useHeader;
+	}
+
+	public void setUseHeader(boolean useHeader) {
+		if (isStreaming()) throw new IllegalStateException("Cannot change header state when streaming");
+		this.useHeader = useHeader;
+	}
+
+	public long getSequence() {
+		return sequence.get();
+	}
+
+	public void resetSequence(long sequence) {
+		if (isStreaming()) throw new IllegalStateException("Cannot reset sequence when streaming");
+
+		BigDecimal bd = new BigDecimal(getEffectiveChunkSize()).multiply(new BigDecimal(sequence));
+
+		resetPosition(bd.intValue());
+	}
+
+	private int getEffectiveChunkSize() {
+		return isUseHeader() ? getChunkSize() - StreamerHeader.HEADER_LENGTH : getChunkSize();
+	}
+
+	protected void resetSequenceFromPosition(int position) {
+		sent.set(position);
+
+		if (position == 0) {
+			sequence.set(0);
+			return;
+		}
+
+		BigDecimal bd = new BigDecimal(position).divide(new BigDecimal(getEffectiveChunkSize()), 3, RoundingMode.HALF_UP);
+
+		sequence.set(bd.longValue());
+	}
+
+	protected long nextSequence() {
+		return sequence.incrementAndGet();
+	}
+
+	/**
+	 * Sets the time to await acknowledgements of {@link #isAckRequired()}
+	 * messages before resending. Defaults to 1 second.
+	 * 
+	 * @param time
+	 *          the value
+	 * @param unit
+	 *          the units
+	 */
+	public void setAckAwait(int time, TimeUnit unit) {
+		if (time < 0) throw new IllegalArgumentException("Ack Await must be >= 0: " + time);
+		if (unit == null) throw new IllegalArgumentException("unit must be specified");
+		this.ackAwait = time;
+		this.ackAwaitUnit = unit;
+	}
+
 	/**
 	 * The Class StreamerListener.
 	 */
 	protected class StreamerListener implements GenericFutureListener<ChannelFuture> {
-
-		/** The latch. */
-		CountDownLatch latch;
 
 		/*
 		 * (non-Javadoc)
@@ -732,7 +877,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		public void operationComplete(ChannelFuture future) throws Exception {
 			if (!future.isSuccess()) pause();
 
-			latch.countDown();
+			if (latch != null) latch.countDown();
 		}
 
 	}

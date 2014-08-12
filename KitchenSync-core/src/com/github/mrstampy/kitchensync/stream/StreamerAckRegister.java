@@ -18,19 +18,24 @@
  */
 package com.github.mrstampy.kitchensync.stream;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
-import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 
 import rx.Scheduler;
 import rx.Subscription;
 import rx.functions.Action0;
 import rx.schedulers.Schedulers;
+
+import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
+import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 
 /**
  * {@link Streamer}s register themselves when sending a message requiring an
@@ -43,11 +48,13 @@ import rx.schedulers.Schedulers;
  */
 public class StreamerAckRegister {
 
-	private static Map<Long, Streamer<?>> ackAwaiters = new ConcurrentHashMap<Long, Streamer<?>>();
-	private static Map<Long, Subscription> subscriptions = new ConcurrentHashMap<Long, Subscription>();
-	private static Map<Long, byte[]> chunks = new ConcurrentHashMap<Long, byte[]>();
+	private static Map<RegKey, List<RegisterContainer>> awaiting = new ConcurrentHashMap<RegKey, List<RegisterContainer>>();
 
 	private static Scheduler cleanupSvc = Schedulers.from(Executors.newCachedThreadPool());
+
+	private static ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+	private static ReadLock readLock = rwLock.readLock();
+	private static WriteLock writeLock = rwLock.writeLock();
 
 	/**
 	 * Adds the {@link Streamer} and the chunk to the register.
@@ -58,24 +65,38 @@ public class StreamerAckRegister {
 	 *          the acker
 	 * @return the long
 	 */
-	public static Long add(byte[] chunk, Streamer<?> acker) {
+	public static long add(byte[] chunk, Streamer<?> acker) {
 		if (!acker.isAckRequired()) return -1l;
 
-		final Long sumOfBytes = convertToLong(chunk);
+		long sumOfBytes = convertToLong(chunk);
+		int port = acker.getChannel().getPort();
 
-		ackAwaiters.put(sumOfBytes, acker);
-		chunks.put(sumOfBytes, chunk);
+		final RegKey rk = new RegKey(sumOfBytes, port);
+
+		List<RegisterContainer> containers = getContainers(rk);
 
 		Subscription sub = cleanupSvc.createWorker().schedule(new Action0() {
 
 			@Override
 			public void call() {
-				getAckAwaiter(sumOfBytes);
-				chunks.remove(sumOfBytes);
+				removeAckAwaiter(rk);
 			}
-		}, 20, TimeUnit.SECONDS);
+		}, 10, TimeUnit.SECONDS);
 
-		subscriptions.put(sumOfBytes, sub);
+		RegisterContainer rc = new RegisterContainer(acker, sub, chunk, sumOfBytes);
+
+		writeLock.lock();
+		try {
+			int idx = containers.indexOf(rc);
+			if (idx == -1) {
+				containers.add(rc);
+			} else {
+				RegisterContainer existing = containers.get(idx);
+				existing.add(sub);
+			}
+		} finally {
+			writeLock.unlock();
+		}
 
 		return sumOfBytes;
 	}
@@ -87,11 +108,22 @@ public class StreamerAckRegister {
 	 *          the sum of bytes
 	 * @return the ack awaiter
 	 */
-	public static Streamer<?> getAckAwaiter(Long sumOfBytes) {
-		Subscription sub = subscriptions.get(sumOfBytes);
-		unsubscribe(sub);
+	public static Streamer<?> getAckAwaiter(long sumOfBytes, int port) {
+		List<RegisterContainer> containers = getContainers(new RegKey(sumOfBytes, port));
 
-		return ackAwaiters.remove(sumOfBytes);
+		RegisterContainer reg = getContainer(sumOfBytes, containers);
+
+		return reg == null ? null : reg.streamer;
+	}
+
+	private static RegisterContainer removeAckAwaiter(RegKey rk) {
+		List<RegisterContainer> containers = getContainers(rk);
+
+		RegisterContainer reg = getContainer(rk.sumOfBytes, containers);
+
+		if (reg != null) removeRegisterContainer(containers, reg);
+
+		return reg;
 	}
 
 	/**
@@ -101,8 +133,52 @@ public class StreamerAckRegister {
 	 *          the sum of bytes
 	 * @return the chunk
 	 */
-	public static byte[] getChunk(Long sumOfBytes) {
-		return chunks.remove(sumOfBytes);
+	public static byte[] getChunk(long sumOfBytes, int port) {
+		RegisterContainer reg = removeAckAwaiter(new RegKey(sumOfBytes, port));
+
+		return reg == null ? null : reg.chunk;
+	}
+
+	private static List<RegisterContainer> getContainers(RegKey rk) {
+		List<RegisterContainer> containers = awaiting.get(rk);
+
+		if (containers == null) {
+			containers = new ArrayList<RegisterContainer>();
+			awaiting.put(rk, containers);
+		}
+
+		return containers;
+	}
+
+	private static RegisterContainer getContainer(long sumOfBytes, List<RegisterContainer> containers) {
+		readLock.lock();
+		try {
+			RegisterContainer reg = null;
+			for (RegisterContainer rc : containers) {
+				if (rc == null || !rc.isAck(sumOfBytes)) continue;
+
+				reg = rc;
+				break;
+			}
+			return reg;
+		} finally {
+			readLock.unlock();
+		}
+	}
+
+	private static void removeRegisterContainer(List<RegisterContainer> containers, RegisterContainer rc) {
+		if (containers.isEmpty()) return;
+
+		writeLock.lock();
+		try {
+			Subscription sub = rc.sub();
+			if (sub == null || rc.count() == 0) {
+				containers.remove(rc);
+			}
+			unsubscribe(sub);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
@@ -122,7 +198,8 @@ public class StreamerAckRegister {
 	}
 
 	/**
-	 * Creates the ack response to send back to the {@link Streamer#isAckRequired()}.
+	 * Creates the ack response to send back to the
+	 * {@link Streamer#isAckRequired()}.
 	 *
 	 * @param sumOfBytes
 	 *          the sum of bytes
@@ -143,17 +220,65 @@ public class StreamerAckRegister {
 	 * @see Streamer#ackReceived(long)
 	 */
 	public static long convertToLong(byte[] chunk) {
-		long id = 0;
-
+		int hash = 0;
 		for (byte b : chunk) {
-			id += b;
+			hash += b;
 		}
-
-		return id;
+		return hash;
 	}
 
 	private static void unsubscribe(Subscription sub) {
 		if (sub != null) sub.unsubscribe();
+	}
+
+	private static class RegisterContainer {
+		Streamer<?> streamer;
+		List<Subscription> subs = new ArrayList<Subscription>();
+		byte[] chunk;
+		Long ackKey;
+
+		public RegisterContainer(Streamer<?> streamer, Subscription sub, byte[] chunk, Long ackKey) {
+			this.streamer = streamer;
+			this.chunk = chunk;
+			this.ackKey = ackKey;
+			subs.add(sub);
+		}
+
+		public int count() {
+			return subs.size();
+		}
+
+		public Subscription sub() {
+			return count() > 0 ? subs.remove(0) : null;
+		}
+
+		public void add(Subscription sub) {
+			subs.add(sub);
+		}
+
+		public boolean isAck(Long key) {
+			return ackKey.equals(key);
+		}
+	}
+
+	private static class RegKey {
+		long sumOfBytes;
+		int port;
+
+		public RegKey(long sumOfBytes, int port) {
+			this.sumOfBytes = sumOfBytes;
+			this.port = port;
+		}
+
+		public boolean equals(Object o) {
+			// bcos its private...
+			RegKey rk = (RegKey) o;
+			return rk.port == port && rk.sumOfBytes == sumOfBytes;
+		}
+
+		public int hashCode() {
+			return ((int) sumOfBytes * 17) + port * 23;
+		}
 	}
 
 	private StreamerAckRegister() {

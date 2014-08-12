@@ -20,6 +20,8 @@ package com.github.mrstampy.kitchensync.util;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The Class KiSyUtils.
@@ -45,7 +47,8 @@ public class KiSyUtils {
 	 * Sleep for the specified number of milliseconds. Interrupted exceptions are
 	 * ignored.
 	 * 
-	 * @param time in millis
+	 * @param time
+	 *          in millis
 	 */
 	public static void snooze(long time) {
 		try {
@@ -58,14 +61,36 @@ public class KiSyUtils {
 	 * Sleep for the specified number of milli and (up to one million)
 	 * nanoseconds. Interrupted exceptions are ignored.
 	 * 
-	 * @param time in millis
-	 * @param nanos the nanoseconds
+	 * @param time
+	 *          in millis
+	 * @param nanos
+	 *          the nanoseconds
 	 */
 	public static void snooze(long time, int nanos) {
 		try {
 			Thread.sleep(time, nanos);
 		} catch (InterruptedException e) {
 		}
+	}
+
+	/**
+	 * Awaits on the specified latch, absorbing any {@link InterruptedException}s.
+	 * 
+	 * @param latch
+	 *          may be null
+	 * @param value
+	 *          the amount to wait
+	 * @param unit
+	 *          the wait units
+	 * @return true if latch was counted down, false otherwise
+	 */
+	public static boolean await(CountDownLatch latch, int value, TimeUnit unit) {
+		try {
+			return latch == null ? false : latch.await(value, unit);
+		} catch (InterruptedException e) {
+		}
+
+		return false;
 	}
 
 	private KiSyUtils() {

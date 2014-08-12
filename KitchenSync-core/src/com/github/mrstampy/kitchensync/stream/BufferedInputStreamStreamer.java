@@ -148,10 +148,11 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	@Override
 	public void reset() {
 		if (isStreaming()) throw new IllegalStateException("Cannot reset when streaming");
-
+		
 		try {
 			in.reset();
 			init();
+			resetSequenceFromPosition(0);
 		} catch (IOException e) {
 			log.error("Could not reset the input stream", e);
 		}

@@ -79,7 +79,7 @@ public class StreamAckInboundMessageHandler extends AbstractInboundKiSyHandler<b
 
 		if (sumOfBytes == null) return;
 
-		Streamer<?> streamer = StreamerAckRegister.getAckAwaiter(sumOfBytes);
+		Streamer<?> streamer = StreamerAckRegister.getAckAwaiter(sumOfBytes, channel.getPort());
 
 		if (streamer == null) {
 			log.warn("No streamer for {}", s);

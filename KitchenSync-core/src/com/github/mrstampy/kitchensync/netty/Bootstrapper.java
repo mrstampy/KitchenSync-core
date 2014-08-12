@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.mrstampy.kitchensync.netty.channel.AbstractKiSyMulticastChannel;
+import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
  * The Class Bootstrapper is the KitchenSync/<a href="http://netty.io">Netty</a>
@@ -493,18 +494,14 @@ public class Bootstrapper {
 	}
 
 	private void await(CountDownLatch latch, String error) {
-		try {
-			boolean ok = latch.await(5, TimeUnit.SECONDS);
-			if (!ok) log.error(error);
-		} catch (InterruptedException e) {
-			// ignored
-		}
+		boolean ok = KiSyUtils.await(latch, 5, TimeUnit.SECONDS);
+		if (!ok) log.error(error);
 	}
 
 	/**
 	 * Creates bootstrap for all purposes. Sets default options, event loop group
-	 * and channel class. If the port &gt; 0 (and it should be &gt; 1024) then it is set
-	 * in the bootstrap (localAddress).
+	 * and channel class. If the port &gt; 0 (and it should be &gt; 1024) then it
+	 * is set in the bootstrap (localAddress).
 	 *
 	 * @param <CHANNEL>
 	 *          the generic type

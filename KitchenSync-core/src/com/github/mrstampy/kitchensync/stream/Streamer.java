@@ -40,6 +40,9 @@ public interface Streamer<MSG> {
 	/** The Constant DEFAULT_CHUNK_SIZE, 1024. */
 	public static final int DEFAULT_CHUNK_SIZE = 1024;
 
+	/** Value 2, the default number of concurrent message threads */
+	public static final int DEFAULT_CONCURRENT_THREADS = 2;
+
 	/**
 	 * The prefix used to identify return messages when {@link #isAckRequired()}:
 	 * 'StreamAck:'. The suffix is the sum of the btyes of the message being
@@ -49,7 +52,7 @@ public interface Streamer<MSG> {
 	 * @see Streamer#ackRequired()
 	 */
 	public static final String ACK_PREFIX = "StreamAck:";
-	
+
 	/**
 	 * Convenience constant for the byte array from {@link #ACK_PREFIX}.
 	 */
@@ -192,6 +195,8 @@ public interface Streamer<MSG> {
 	 * {@link IllegalStateException} should the message be streaming.
 	 */
 	void reset();
+	
+	void resetSequence(long sequence);
 
 	/**
 	 * If this method is invoked prior to either {@link #stream()} or
@@ -302,4 +307,25 @@ public interface Streamer<MSG> {
 	 * @see StreamerAckRegister#convertToLong(byte[])
 	 */
 	void ackReceived(long sumOfBytesInChunk);
+
+	/**
+	 * Set the number of concurrent message threads
+	 * 
+	 * @param concurrentThreads
+	 *          the number of concurrent message threads
+	 */
+	void setConcurrentThreads(int concurrentThreads);
+
+	/**
+	 * Returns the number of concurrent message threads
+	 * 
+	 * @return the number of threads
+	 */
+	int getConcurrentThreads();
+	
+	void setUseHeader(boolean useHeader);
+	
+	boolean isUseHeader();
+	
+	long getSequence();
 }

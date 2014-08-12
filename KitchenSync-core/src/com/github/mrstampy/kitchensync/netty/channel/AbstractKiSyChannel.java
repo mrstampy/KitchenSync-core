@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.github.mrstampy.kitchensync.message.outbound.KiSyOutboundMessageManager;
 import com.github.mrstampy.kitchensync.netty.Bootstrapper;
 import com.github.mrstampy.kitchensync.netty.channel.payload.ByteBufCreator;
+import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
  * Abstract superclass for {@link KiSyChannel} implementations. Note that the
@@ -244,7 +245,8 @@ public abstract class AbstractKiSyChannel<BBC extends ByteBufCreator, CI extends
 	}
 
 	/**
-	 * Presend, invoked prior to {@link #sendImpl(DatagramPacket, InetSocketAddress)}.
+	 * Presend, invoked prior to
+	 * {@link #sendImpl(DatagramPacket, InetSocketAddress)}.
 	 *
 	 * @param <MSG>
 	 *          the generic type
@@ -386,12 +388,8 @@ public abstract class AbstractKiSyChannel<BBC extends ByteBufCreator, CI extends
 	 *          the error
 	 */
 	protected void await(CountDownLatch latch, String error) {
-		try {
-			boolean ok = latch.await(5, TimeUnit.SECONDS);
-			if (!ok) log.error(error);
-		} catch (InterruptedException e) {
-			log.error("Unexpected interruption for {}", error, e);
-		}
+		boolean ok = KiSyUtils.await(latch, 5, TimeUnit.SECONDS);
+		if (!ok) log.error(error);
 	}
 
 	/*

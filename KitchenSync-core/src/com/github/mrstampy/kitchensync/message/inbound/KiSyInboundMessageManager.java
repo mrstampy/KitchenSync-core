@@ -112,9 +112,12 @@ public class KiSyInboundMessageManager<MSG> {
 	/**
 	 * Process the given message.
 	 *
-	 * @param message          the message
-	 * @param channel          the channel on which the message was received
-	 * @param sender the sender
+	 * @param message
+	 *          the message
+	 * @param channel
+	 *          the channel on which the message was received
+	 * @param sender
+	 *          the sender
 	 */
 	public void processMessage(MSG message, KiSyChannel channel, InetSocketAddress sender) {
 		log.trace("Processing message {}", message);
@@ -160,18 +163,14 @@ public class KiSyInboundMessageManager<MSG> {
 
 			@Override
 			public void call() {
-				try {
-					boolean done = cdl.await(10, TimeUnit.SECONDS);
-					if (done) {
-						if (log.isTraceEnabled()) {
-							String millis = KiSyUtils.toMillis(System.nanoTime() - start);
-							log.trace("Message {} fully processed in {} ms", message, millis);
-						}
-					} else {
-						log.warn("Message processing > 10 seconds: {}", message);
+				boolean done = KiSyUtils.await(cdl, 10, TimeUnit.SECONDS);
+				if (done) {
+					if (log.isTraceEnabled()) {
+						String millis = KiSyUtils.toMillis(System.nanoTime() - start);
+						log.trace("Message {} fully processed in {} ms", message, millis);
 					}
-				} catch (InterruptedException e) {
-					log.error("Unexpected exception", e);
+				} else {
+					log.warn("Message processing > 10 seconds: {}", message);
 				}
 			}
 		});
