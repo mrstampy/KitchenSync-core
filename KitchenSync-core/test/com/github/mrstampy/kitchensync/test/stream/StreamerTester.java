@@ -73,7 +73,8 @@ public class StreamerTester {
 	/**
 	 * Specify the large file to stream.
 	 * 
-	 * @param file the large file's path and name
+	 * @param file
+	 *          the large file's path and name
 	 */
 	public StreamerTester(String file) {
 		this.file = file;
@@ -118,7 +119,8 @@ public class StreamerTester {
 			log.info("Success? {}", future.isSuccess());
 			BigDecimal packetLoss = (BigDecimal.ONE.subtract(new BigDecimal(received.get()).divide(
 					new BigDecimal(streamer.size()), 6, RoundingMode.HALF_UP))).multiply(new BigDecimal(100));
-			log.info("Sent: {}, Received: {}, Packet loss: {} %", streamer.size(), received.get(), packetLoss.toPlainString());
+			log.info("Sent: {}, Received: {}, Packet loss: {} %, Concurrent threads: {}", streamer.size(), received.get(),
+					packetLoss.toPlainString(), streamer.getConcurrentThreads());
 
 			KiSyUtils.snooze(100);
 			streamer.reset();
@@ -167,18 +169,18 @@ public class StreamerTester {
 			@Override
 			public void messageReceived(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
 				received.addAndGet(streamer.isUseHeader() ? message.length - StreamerHeader.HEADER_LENGTH : message.length);
-				
-				if(streamer.isAckRequired()) {
-					long sumOfBytes = StreamerAckRegister.convertToLong(message); 
+
+				if (streamer.isAckRequired()) {
+					long sumOfBytes = StreamerAckRegister.convertToLong(message);
 					channel.send(StreamerAckRegister.createAckResponse(sumOfBytes), sender);
 				}
-				
-				if(streamer.isUseHeader()) checkHeader(message);
+
+				if (streamer.isUseHeader()) checkHeader(message);
 			}
 
 			private void checkHeader(byte[] message) {
 				StreamerHeader header = new StreamerHeader(message);
-				if(header.getSequence() % 100000 == 0) log.debug("Received sequence {}", header.getSequence());
+				if (header.getSequence() % 100000 == 0) log.debug("Received sequence {}", header.getSequence());
 			}
 
 			@Override
