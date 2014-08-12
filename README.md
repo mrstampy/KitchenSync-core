@@ -1,5 +1,11 @@
 # A Java Library for Distributed Communication
 
+# Release 2.2 - August 12, 2014
+
+* Two new functions added to the Streamer interface, [concurrent threads and header with sequence per chunk](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/Streamer.java)
+* New [StreamerHeader](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/StreamerHeader.java) class for header specifics
+* Increasing the number of concurrent threads greatly boosts performance, over 150 megabytes/second at full throttle and over 40 megabytes per second for acknowledgement messages
+
 # Release 2.1 - August 10, 2014
 
 * Added [Streamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/Streamer.java) architecture to stream arbitrarily large amounts of data
@@ -15,7 +21,7 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.1"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
 
 # KitchenSync Architecture
