@@ -138,7 +138,7 @@ public class StreamerAckRegister {
 
 		RegisterContainer reg = getContainer(rk.sumOfBytes, containers);
 
-		if (reg != null) removeRegisterContainer(containers, reg);
+		if (reg != null) removeRegisterContainer(rk, containers, reg);
 
 		return reg;
 	}
@@ -185,16 +185,17 @@ public class StreamerAckRegister {
 		}
 	}
 
-	private static void removeRegisterContainer(List<RegisterContainer> containers, RegisterContainer rc) {
+	private static void removeRegisterContainer(RegKey rk, List<RegisterContainer> containers, RegisterContainer rc) {
 		if (containers.isEmpty()) return;
 
 		writeLock.lock();
 		try {
 			Subscription sub = rc.sub();
+			unsubscribe(sub);
 			if (sub == null || rc.count() == 0) {
 				containers.remove(rc);
+				if(containers.isEmpty()) awaiting.remove(rk);
 			}
-			unsubscribe(sub);
 		} finally {
 			writeLock.unlock();
 		}
