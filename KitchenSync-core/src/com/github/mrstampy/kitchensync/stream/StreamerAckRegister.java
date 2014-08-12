@@ -48,6 +48,21 @@ import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHan
  */
 public class StreamerAckRegister {
 
+	/**
+	 * The prefix used to identify return messages when {@link Streamer#isAckRequired()}:
+	 * 'StreamAck:'. The suffix is the sum of the btyes of the message being
+	 * acknowledged.
+	 * 
+	 * @see #convertToLong(byte[])
+	 * @see Streamer#ackRequired()
+	 */
+	public static final String ACK_PREFIX = "StreamAck:";
+
+	/**
+	 * Convenience constant for the byte array from {@link #ACK_PREFIX}.
+	 */
+	public static final byte[] ACK_PREFIX_BYTES = ACK_PREFIX.getBytes();
+
 	private static Map<RegKey, List<RegisterContainer>> awaiting = new ConcurrentHashMap<RegKey, List<RegisterContainer>>();
 
 	private static Scheduler cleanupSvc = Schedulers.from(Executors.newCachedThreadPool());
@@ -106,6 +121,8 @@ public class StreamerAckRegister {
 	 *
 	 * @param sumOfBytes
 	 *          the sum of bytes
+	 * @param port
+	 *          the port
 	 * @return the ack awaiter
 	 */
 	public static Streamer<?> getAckAwaiter(long sumOfBytes, int port) {
@@ -131,6 +148,8 @@ public class StreamerAckRegister {
 	 *
 	 * @param sumOfBytes
 	 *          the sum of bytes
+	 * @param port
+	 *          the port
 	 * @return the chunk
 	 */
 	public static byte[] getChunk(long sumOfBytes, int port) {
@@ -190,11 +209,11 @@ public class StreamerAckRegister {
 	 * @return true, if checks if is ack message
 	 */
 	public static boolean isAckMessage(byte[] message) {
-		if (message.length < Streamer.ACK_PREFIX_BYTES.length) return false;
+		if (message.length < ACK_PREFIX_BYTES.length) return false;
 
-		byte[] b = Arrays.copyOfRange(message, 0, Streamer.ACK_PREFIX_BYTES.length);
+		byte[] b = Arrays.copyOfRange(message, 0, ACK_PREFIX_BYTES.length);
 
-		return Arrays.equals(b, Streamer.ACK_PREFIX_BYTES);
+		return Arrays.equals(b, ACK_PREFIX_BYTES);
 	}
 
 	/**
@@ -206,7 +225,7 @@ public class StreamerAckRegister {
 	 * @return the byte[]
 	 */
 	public static byte[] createAckResponse(long sumOfBytes) {
-		String s = Streamer.ACK_PREFIX + sumOfBytes;
+		String s = ACK_PREFIX + sumOfBytes;
 
 		return s.getBytes();
 	}

@@ -91,7 +91,7 @@ public class StreamAckInboundMessageHandler extends AbstractInboundKiSyHandler<b
 
 	private Long parseMessage(String message) {
 		try {
-			String s = message.substring(Streamer.ACK_PREFIX.length(), message.length());
+			String s = message.substring(StreamerAckRegister.ACK_PREFIX.length(), message.length());
 
 			return Long.parseLong(s);
 		} catch (Exception e) {

@@ -31,6 +31,8 @@ import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHan
  * in chunks. The default size for chunks is 1024 bytes. Three modes of
  * streaming are supported: {@link #fullThrottle()} (default),
  * {@link #ackRequired()} and {@link #setChunksPerSecond(int)}.
+ * {@link #setConcurrentThreads(int)} will set the number of concurrent chunks
+ * being sent at any one time.
  *
  * @param <MSG>
  *          the generic type
@@ -40,23 +42,8 @@ public interface Streamer<MSG> {
 	/** The Constant DEFAULT_CHUNK_SIZE, 1024. */
 	public static final int DEFAULT_CHUNK_SIZE = 1024;
 
-	/** Value 2, the default number of concurrent message threads */
+	/** Value 2, the default number of concurrent message threads. */
 	public static final int DEFAULT_CONCURRENT_THREADS = 2;
-
-	/**
-	 * The prefix used to identify return messages when {@link #isAckRequired()}:
-	 * 'StreamAck:'. The suffix is the sum of the btyes of the message being
-	 * acknowledged.
-	 * 
-	 * @see StreamerAckRegister#convertToLong(byte[])
-	 * @see Streamer#ackRequired()
-	 */
-	public static final String ACK_PREFIX = "StreamAck:";
-
-	/**
-	 * Convenience constant for the byte array from {@link #ACK_PREFIX}.
-	 */
-	public static final byte[] ACK_PREFIX_BYTES = ACK_PREFIX.getBytes();
 
 	/**
 	 * Resets the position in the stream for sending. If invoked while streaming
@@ -195,7 +182,13 @@ public interface Streamer<MSG> {
 	 * {@link IllegalStateException} should the message be streaming.
 	 */
 	void reset();
-	
+
+	/**
+	 * Resets the position to the specified sequence, if possible.
+	 *
+	 * @param sequence
+	 *          the sequence
+	 */
 	void resetSequence(long sequence);
 
 	/**
@@ -207,6 +200,9 @@ public interface Streamer<MSG> {
 	 * During testing some packet loss occurs for values &gt; 1000. If message
 	 * fidelity is a top priority then {@link #ackRequired()} is more suitable.<br>
 	 * <br>
+	 * 
+	 * Note that this value is multiplicative with {@link #getConcurrentThreads()}
+	 * , so that at each sending {@link #getConcurrentThreads()} chunks are sent.
 	 *
 	 * @param chunksPerSecond
 	 *          the chunks per second
@@ -276,8 +272,8 @@ public interface Streamer<MSG> {
 	 * isn't a good fit for {@link KiSyChannel#isMulticastChannel()}s...<br>
 	 * <br>
 	 * 
-	 * Throughput on a single host using 2048 byte packets is on the order of 18
-	 * megabytes/sec.
+	 * Throughput on a single host using 2048 byte packets is on the order of 40
+	 * megabytes/sec using 5 concurrent threads.
 	 * 
 	 * @see #ackReceived(long)
 	 * @see #fullThrottle()
@@ -300,7 +296,7 @@ public interface Streamer<MSG> {
 	 * chunk received. This method should be invoked by a
 	 * {@link KiSyInboundMesssageHandler} on the sender-side. If this method is
 	 * not invoked when {@link #isAckRequired()} then the same chunk will be
-	 * streamed every 10 seconds - probably not desired behaviour.
+	 * streamed every second - probably not desired behaviour.
 	 *
 	 * @param sumOfBytesInChunk
 	 *          the sum of bytes in chunk
@@ -309,23 +305,47 @@ public interface Streamer<MSG> {
 	void ackReceived(long sumOfBytesInChunk);
 
 	/**
-	 * Set the number of concurrent message threads
-	 * 
+	 * Set the number of concurrent message threads.
+	 *
 	 * @param concurrentThreads
 	 *          the number of concurrent message threads
 	 */
 	void setConcurrentThreads(int concurrentThreads);
 
 	/**
-	 * Returns the number of concurrent message threads
-	 * 
+	 * Returns the number of concurrent message threads.
+	 *
 	 * @return the number of threads
 	 */
 	int getConcurrentThreads();
-	
+
+	/**
+	 * If true will prepend a header containing the {@link #getSequence()} value
+	 * to each chunk. The size of each chunk will be reduced by
+	 * {@link StreamerHeader#HEADER_LENGTH} so that each message sent has a length
+	 * of {@link #getChunkSize()}.<br>
+	 * <br>
+	 * 
+	 * Setting the number of {@link #setConcurrentThreads(int)} to a value of &gt; 1
+	 * should set this value to true.
+	 *
+	 * @param useHeader
+	 *          the use header
+	 * @see StreamerHeader
+	 */
 	void setUseHeader(boolean useHeader);
-	
+
+	/**
+	 * Checks if is use header.
+	 *
+	 * @return true, if checks if is use header
+	 */
 	boolean isUseHeader();
-	
+
+	/**
+	 * Gets the current chunk number.
+	 *
+	 * @return the sequence
+	 */
 	long getSequence();
 }

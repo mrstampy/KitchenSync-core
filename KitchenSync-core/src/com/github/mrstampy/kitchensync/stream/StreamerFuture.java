@@ -43,10 +43,14 @@ public class StreamerFuture implements ChannelFuture {
 	private boolean cancelled;
 	private boolean done;
 	private Throwable cause;
+
+	/** The streamer. */
 	protected Streamer<?> streamer;
 
+	/** The listeners. */
 	protected List<GenericFutureListener<ChannelFuture>> listeners = new ArrayList<GenericFutureListener<ChannelFuture>>();
 
+	/** The latch. */
 	protected CountDownLatch latch = new CountDownLatch(1);
 
 	/**

@@ -54,6 +54,7 @@ import com.github.mrstampy.kitchensync.util.KiSyUtils;
 public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	private static final Logger log = LoggerFactory.getLogger(AbstractStreamer.class);
 
+	/** The Constant DEFAULT_ACK_AWAIT, 1 second. */
 	public static final int DEFAULT_ACK_AWAIT = 1;
 
 	/**
@@ -96,7 +97,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private int chunksPerSecond = -1;
 
-	/** The ack key. */
+	/** The list of keys awaiting {@link #ackReceived(long)}. */
 	protected List<Long> ackKeys = new ArrayList<Long>();
 
 	/** The ack latch. */
@@ -115,6 +116,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private boolean useHeader = concurrentThreads > 1;
 
+	/** The sequence. */
 	protected AtomicLong sequence = new AtomicLong(0);
 
 	/**
@@ -146,6 +148,13 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 */
 	protected abstract byte[] getChunk() throws Exception;
 
+	/**
+	 * Gets the chunk with header.
+	 *
+	 * @return the chunk with header
+	 * @throws Exception
+	 *           the exception
+	 */
 	protected byte[] getChunkWithHeader() throws Exception {
 		byte[] chunk = getChunk();
 
@@ -427,7 +436,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * The service activated when StreamerType is CHUNKS_PER_SECOND
+	 * The service activated when StreamerType is CHUNKS_PER_SECOND.
 	 */
 	protected void scheduledService() {
 		BigDecimal secondsPerChunk = BigDecimal.ONE.divide(new BigDecimal(chunksPerSecond), 6, RoundingMode.HALF_UP);
@@ -447,7 +456,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * The service activated when StreamerType is FULL_THROTTLE
+	 * The service activated when StreamerType is FULL_THROTTLE.
 	 */
 	protected void fullThrottleService() {
 		unsubscribe();
@@ -480,7 +489,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * The service activated when StreamerType is ACK_REQUIRED
+	 * The service activated when StreamerType is ACK_REQUIRED.
 	 */
 	protected void sendAndAwaitAck() {
 		unsubscribe();
@@ -538,7 +547,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * The service activated when the last chunk has not been acknowledged
+	 * The service activated when the last chunk has not been acknowledged.
 	 */
 	protected void resendLast() {
 		if (!isStreaming()) return;
@@ -570,7 +579,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	/**
 	 * The service activated to await acknowledgement and to invoke another send
-	 * and wait or a resend of the last message
+	 * and wait or a resend of the last message.
 	 */
 	protected void awaitAck() {
 		if (KiSyUtils.await(latch, ackAwait, ackAwaitUnit)) {
@@ -631,6 +640,12 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		return chunk;
 	}
 
+	/**
+	 * Process chunks.
+	 *
+	 * @param chunks
+	 *          the chunks
+	 */
 	protected void processChunks(List<byte[]> chunks) {
 		Observable.from(chunks, svc).subscribe(new Action1<byte[]>() {
 
@@ -641,6 +656,13 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		});
 	}
 
+	/**
+	 * Gets the latch count.
+	 *
+	 * @param chunks
+	 *          the chunks
+	 * @return the latch count
+	 */
 	protected int getLatchCount(List<byte[]> chunks) {
 		int i = 0;
 		for (byte[] b : chunks) {
@@ -687,8 +709,6 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 *
 	 * @param chunk
 	 *          the chunk
-	 * @throws InterruptedException
-	 *           the interrupted exception
 	 */
 	protected void sendChunk(byte[] chunk) {
 		if (isAckRequired()) ackKeys.add(StreamerAckRegister.add(chunk, this));
@@ -792,10 +812,21 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		this.destination = destination;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getConcurrentThreads()
+	 */
 	public int getConcurrentThreads() {
 		return concurrentThreads;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.stream.Streamer#setConcurrentThreads(int)
+	 */
 	public void setConcurrentThreads(int concurrentThreads) {
 		if (concurrentThreads < 1) throw new IllegalArgumentException("Must be > 0: " + concurrentThreads);
 		this.concurrentThreads = concurrentThreads;
@@ -803,19 +834,39 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		if (concurrentThreads > 1) setUseHeader(true);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isUseHeader()
+	 */
 	public boolean isUseHeader() {
 		return useHeader;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#setUseHeader(boolean)
+	 */
 	public void setUseHeader(boolean useHeader) {
 		if (isStreaming()) throw new IllegalStateException("Cannot change header state when streaming");
 		this.useHeader = useHeader;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getSequence()
+	 */
 	public long getSequence() {
 		return sequence.get();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#resetSequence(long)
+	 */
 	public void resetSequence(long sequence) {
 		if (isStreaming()) throw new IllegalStateException("Cannot reset sequence when streaming");
 
@@ -828,6 +879,12 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		return isUseHeader() ? getChunkSize() - StreamerHeader.HEADER_LENGTH : getChunkSize();
 	}
 
+	/**
+	 * Reset sequence from position.
+	 *
+	 * @param position
+	 *          the position
+	 */
 	protected void resetSequenceFromPosition(int position) {
 		sent.set(position);
 
@@ -841,6 +898,11 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		sequence.set(bd.longValue());
 	}
 
+	/**
+	 * Next sequence.
+	 *
+	 * @return the long
+	 */
 	protected long nextSequence() {
 		return sequence.incrementAndGet();
 	}

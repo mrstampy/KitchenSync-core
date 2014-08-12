@@ -45,10 +45,16 @@ import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	private static final Logger log = LoggerFactory.getLogger(BufferedInputStreamStreamer.class);
 
+	/** The in. */
 	protected BufferedInputStream in;
 
+	/** The svc. */
 	protected Scheduler svc = Schedulers.from(Executors.newSingleThreadExecutor());
+
+	/** The sub. */
 	protected Subscription sub;
+
+	/** The latch. */
 	protected CountDownLatch latch;
 
 	private boolean finishOnEmptyStream = true;
@@ -100,7 +106,10 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	 * 
 	 * By default if {@link InputStream#available()} returns 0 then finalization
 	 * logic is executed.
-	 * 
+	 *
+	 * @return the chunk
+	 * @throws Exception
+	 *           the exception
 	 * @see com.github.mrstampy.kitchensync.stream.AbstractStreamer#getChunk()
 	 */
 	protected byte[] getChunk() throws Exception {
@@ -134,6 +143,9 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 
 	/**
 	 * Not implemented.
+	 *
+	 * @param newPosition
+	 *          the new position
 	 */
 	@Override
 	public void resetPosition(int newPosition) {
@@ -148,7 +160,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	@Override
 	public void reset() {
 		if (isStreaming()) throw new IllegalStateException("Cannot reset when streaming");
-		
+
 		try {
 			in.reset();
 			init();
@@ -218,7 +230,8 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	}
 
 	/**
-	 * Starts the wait for more bytes thread when not {@link #isFinishOnEmptyStream()}
+	 * Starts the wait for more bytes thread when not
+	 * {@link #isFinishOnEmptyStream()}.
 	 */
 	protected void startWaitForMore() {
 		sub = svc.createWorker().schedulePeriodically(new Action0() {
@@ -250,7 +263,8 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	 * Set to false to pause sending if the stream is currently empty. If true
 	 * (the default) the message finalization will occur when the stream is empty.
 	 * 
-	 * @param finishOnEmptyStream true if empty stream indicates the end of message
+	 * @param finishOnEmptyStream
+	 *          true if empty stream indicates the end of message
 	 */
 	public void setFinishOnEmptyStream(boolean finishOnEmptyStream) {
 		this.finishOnEmptyStream = finishOnEmptyStream;

@@ -108,7 +108,7 @@ public class FileStreamer extends AbstractStreamer<File> {
 		if (newPosition < 0 || newPosition > mappedByteBuffer.limit()) return;
 
 		mappedByteBuffer.position(newPosition);
-		
+
 		resetSequenceFromPosition(newPosition);
 	}
 
@@ -124,7 +124,7 @@ public class FileStreamer extends AbstractStreamer<File> {
 		byte[] chunk = createByteArray(remaining);
 
 		mappedByteBuffer.get(chunk);
-		
+
 		return chunk;
 	}
 
