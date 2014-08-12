@@ -21,10 +21,7 @@ package com.github.mrstampy.kitchensync.stream;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * The Class StreamerHeader provides the ability to determine if a message
