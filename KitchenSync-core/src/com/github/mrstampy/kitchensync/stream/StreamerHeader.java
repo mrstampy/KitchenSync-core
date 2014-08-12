@@ -80,6 +80,11 @@ public class StreamerHeader implements Comparable<StreamerHeader>{
 		return message;
 	}
 
+	/**
+	 * Facilitates ordering by sequence.
+	 * 
+	 * @return negative or zero if ordered, positive otherwise 
+	 */
 	@Override
 	public int compareTo(StreamerHeader o) {
 		return (int)(getSequence() - o.getSequence());
