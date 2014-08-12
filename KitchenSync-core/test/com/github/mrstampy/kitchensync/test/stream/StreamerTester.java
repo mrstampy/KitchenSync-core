@@ -115,14 +115,14 @@ public class StreamerTester {
 		for (int i = 0; i < 3; i++) {
 			ChannelFuture future = streamer.stream();
 			future.awaitUninterruptibly();
+			
+			KiSyUtils.snooze(100);
 
 			log.info("Success? {}", future.isSuccess());
 			BigDecimal packetLoss = (BigDecimal.ONE.subtract(new BigDecimal(received.get()).divide(
 					new BigDecimal(streamer.size()), 6, RoundingMode.HALF_UP))).multiply(new BigDecimal(100));
 			log.info("Sent: {}, Received: {}, Packet loss: {} %, Concurrent threads: {}", streamer.size(), received.get(),
 					packetLoss.toPlainString(), streamer.getConcurrentThreads());
-
-			KiSyUtils.snooze(100);
 			streamer.reset();
 			received.set(0);
 		}
