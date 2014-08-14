@@ -732,7 +732,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * Counts down {@link #latch} when not {@link #isFinishOnEmptyStream()}.
+	 * Counts down {@link #latch}
 	 */
 	protected void countdownLatch() {
 		if (latch != null) latch.countDown();
