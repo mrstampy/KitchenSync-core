@@ -1,5 +1,11 @@
 # A Java Library for Distributed Communication
 
+# Release 2.2.2 - August 14, 2014
+
+* bugfix, sent value not adjusted for header
+* bugfix, unintended and unnecessary overrides in BufferedInputStreamStreamer
+* better code organization
+
 # Release 2.2.1 - August 12, 2014
 
 * Two new functions added to the Streamer interface, [concurrent threads and header with sequence per chunk](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/Streamer.java)
@@ -21,7 +27,7 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.1"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.2"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
 
 # KitchenSync Architecture
