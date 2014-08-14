@@ -260,7 +260,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	public ChannelFuture stream(MSG message) throws Exception {
 		if (isStreaming()) throw new IllegalStateException("Cannot send message, already streaming");
 
-		complete.set(false);
+		init();
 		prepareForSend(message);
 
 		return stream();
@@ -718,6 +718,24 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		if (isFullThrottle()) cf.addListener(streamerListener);
 
 		sent.addAndGet(isUseHeader() ? chunk.length - StreamerHeader.HEADER_LENGTH : chunk.length);
+	}
+	
+	/**
+	 * Initialzes the state of the streamer
+	 */
+	protected void init() {
+		sent.set(0);
+		sequence.set(0);
+		complete.set(false);
+		unsubscribe();
+		countdownLatch();
+	}
+
+	/**
+	 * Counts down {@link #latch} when not {@link #isFinishOnEmptyStream()}.
+	 */
+	protected void countdownLatch() {
+		if (latch != null) latch.countDown();
 	}
 
 	/**

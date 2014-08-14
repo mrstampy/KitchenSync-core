@@ -23,16 +23,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import rx.Scheduler;
-import rx.Subscription;
 import rx.functions.Action0;
-import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 
@@ -47,15 +43,6 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 
 	/** The in. */
 	protected BufferedInputStream in;
-
-	/** The svc. */
-	protected Scheduler svc = Schedulers.from(Executors.newSingleThreadExecutor());
-
-	/** The sub. */
-	protected Subscription sub;
-
-	/** The latch. */
-	protected CountDownLatch latch;
 
 	private boolean finishOnEmptyStream = true;
 
@@ -164,7 +151,6 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		try {
 			in.reset();
 			init();
-			resetSequenceFromPosition(0);
 		} catch (IOException e) {
 			log.error("Could not reset the input stream", e);
 		}
@@ -201,32 +187,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		in = (message instanceof BufferedInputStream) ? (BufferedInputStream) message : new BufferedInputStream(message);
 
 		setSize(in.available());
-		init();
-	}
-
-	/**
-	 * Initializes state for the start of streaming.
-	 */
-	protected void init() {
 		in.mark((int) size());
-		sent.set(0);
-		complete.set(false);
-		unsubscribe();
-		countdownLatch();
-	}
-
-	/**
-	 * Unsubscribes from {@link #sub} when not {@link #isFinishOnEmptyStream()}.
-	 */
-	protected void unsubscribe() {
-		if (sub != null) sub.unsubscribe();
-	}
-
-	/**
-	 * Counts down {@link #latch} when not {@link #isFinishOnEmptyStream()}.
-	 */
-	protected void countdownLatch() {
-		if (latch != null) latch.countDown();
 	}
 
 	/**
@@ -243,7 +204,6 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 
 				countdownLatch();
 				if (isChunksPerSecond() && !isComplete()) stream();
-				unsubscribe();
 			}
 		}, 10, 10, TimeUnit.MILLISECONDS);
 	}
