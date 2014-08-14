@@ -717,7 +717,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		if (isFullThrottle()) cf.addListener(streamerListener);
 
-		sent.addAndGet(chunk.length);
+		sent.addAndGet(isUseHeader() ? chunk.length - StreamerHeader.HEADER_LENGTH : chunk.length);
 	}
 
 	/**
