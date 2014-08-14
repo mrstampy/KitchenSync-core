@@ -39,8 +39,8 @@ import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHan
  */
 public interface Streamer<MSG> {
 
-	/** The Constant DEFAULT_CHUNK_SIZE, 1024. */
-	public static final int DEFAULT_CHUNK_SIZE = 1024;
+	/** The Constant DEFAULT_CHUNK_SIZE, 2048. */
+	public static final int DEFAULT_CHUNK_SIZE = 2048;
 
 	/** Value 2, the default number of concurrent message threads. */
 	public static final int DEFAULT_CONCURRENT_THREADS = 2;

@@ -142,11 +142,11 @@ public class StreamerTester {
 	}
 
 	private Streamer<?> getFileStreamer() throws Exception {
-		return new FileStreamer(new File(file), channel1, channel2.localAddress(), 2048);
+		return new FileStreamer(new File(file), channel1, channel2.localAddress());
 	}
 
 	private Streamer<?> getBufferedInputStreamStreamer() throws Exception {
-		return new BufferedInputStreamStreamer(new FileInputStream(file), channel1, channel2.localAddress(), 2048);
+		return new BufferedInputStreamStreamer(new FileInputStream(file), channel1, channel2.localAddress());
 	}
 
 	private KiSyChannel initChannel() {
