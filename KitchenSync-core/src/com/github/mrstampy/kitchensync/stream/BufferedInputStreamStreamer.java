@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import rx.functions.Action0;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
  * This implementation of the {@link Streamer} interface streams the content of
@@ -45,6 +46,8 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	protected BufferedInputStream in;
 
 	private boolean finishOnEmptyStream = true;
+
+	private boolean inputStreamResettable;
 
 	/**
 	 * The Constructor.
@@ -149,7 +152,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		if (isStreaming()) throw new IllegalStateException("Cannot reset when streaming");
 
 		try {
-			in.reset();
+			if (markSupported()) in.reset();
 			init();
 		} catch (IOException e) {
 			log.error("Could not reset the input stream", e);
@@ -187,7 +190,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		in = (message instanceof BufferedInputStream) ? (BufferedInputStream) message : new BufferedInputStream(message);
 
 		setSize(in.available());
-		in.mark((int) size());
+		if (markSupported()) in.mark((int) size());
 	}
 
 	/**
@@ -209,6 +212,32 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	}
 
 	/**
+	 * Overriding to prevent finishing on an empty chunk when not
+	 * {@link #isFinishOnEmptyStream()}.
+	 *
+	 * @param chunk the chunk
+	 */
+	protected void processChunk(byte[] chunk) {
+		if (isPausible(chunk)) {
+			pause();
+		} else if (chunk.length > 0) {
+			sendChunk(chunk);
+		} else if (isFinishOnEmptyStream()) {
+			finish(true, null);
+		}
+
+		KiSyUtils.snooze(0); // necessary for packet fidelity when @ full throttle
+	}
+
+	private boolean isPausible(byte[] chunk) {
+		return chunk == null || (chunk.length == 0 && !isFinishOnEmptyStream());
+	}
+
+	private boolean markSupported() {
+		return in != null && in.markSupported() && isInputStreamResettable();
+	}
+
+	/**
 	 * Returns true if this {@link Streamer} finalizes when the input stream is
 	 * empty. If false then finalization will occur via a call to
 	 * {@link #cancel()} or on error.
@@ -222,12 +251,37 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	/**
 	 * Set to false to pause sending if the stream is currently empty. If true
 	 * (the default) the message finalization will occur when the stream is empty.
+	 * If false then {@link #setInputStreamResettable(boolean)} is also set to
+	 * false.
 	 * 
 	 * @param finishOnEmptyStream
 	 *          true if empty stream indicates the end of message
 	 */
 	public void setFinishOnEmptyStream(boolean finishOnEmptyStream) {
 		this.finishOnEmptyStream = finishOnEmptyStream;
+
+		if (!finishOnEmptyStream) setInputStreamResettable(false);
+	}
+
+	/**
+	 * If true then {@link InputStream#mark(int)} and {@link InputStream#reset()}
+	 * will be invoked appropriately on the input stream.
+	 *
+	 * @return true, if checks if is input stream resettable
+	 */
+	public boolean isInputStreamResettable() {
+		return inputStreamResettable;
+	}
+
+	/**
+	 * If set to false will prevent {@link InputStream#mark(int)} and
+	 * {@link InputStream#reset()} from being invoked.
+	 *
+	 * @param inputStreamResettable the input stream resettable
+	 * @see #isFinishOnEmptyStream()
+	 */
+	public void setInputStreamResettable(boolean inputStreamResettable) {
+		this.inputStreamResettable = inputStreamResettable;
 	}
 
 }

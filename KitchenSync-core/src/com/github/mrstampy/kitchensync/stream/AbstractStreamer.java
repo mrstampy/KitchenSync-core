@@ -18,6 +18,7 @@
  */
 package com.github.mrstampy.kitchensync.stream;
 
+import static com.github.mrstampy.kitchensync.util.KiSyUtils.await;
 import io.netty.channel.ChannelFuture;
 import io.netty.util.concurrent.GenericFutureListener;
 
@@ -43,6 +44,7 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
@@ -118,6 +120,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	/** The sequence. */
 	protected AtomicLong sequence = new AtomicLong(0);
+
+	private boolean eomOnFinish = false;
 
 	/**
 	 * The Constructor.
@@ -242,11 +246,6 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 */
 	@Override
 	public void cancel() {
-		if (isStreaming()) {
-			pause();
-			reset();
-		}
-
 		cancelFuture();
 	}
 
@@ -414,6 +413,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 */
 	protected void cancelFuture() {
 		future.setCancelled(true);
+		streaming.set(true);
 		finish(false, null);
 	}
 
@@ -481,11 +481,15 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 				if (chunk != null && chunk.length > 0) latchCount++;
 			}
 
-			if (latchCount > 0 && isFullThrottle()) KiSyUtils.await(latch, 50, TimeUnit.MILLISECONDS);
+			awaitLatchIfRequired(latchCount);
 		} catch (Exception e) {
 			log.error("Unexpected exception", e);
 			finish(false, e);
 		}
+	}
+
+	private void awaitLatchIfRequired(int latchCount) {
+		if (latchCount > 0 && isFullThrottle()) await(latch, 50, TimeUnit.MILLISECONDS);
 	}
 
 	/**
@@ -582,7 +586,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * and wait or a resend of the last message.
 	 */
 	protected void awaitAck() {
-		if (KiSyUtils.await(latch, ackAwait, ackAwaitUnit)) {
+		if (await(latch, ackAwait, ackAwaitUnit)) {
 			sendAndAwaitAck();
 		} else {
 			log.warn("No ack received for last packet, resending");
@@ -601,7 +605,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * Profile.
 	 */
 	protected void profile() {
-		if (!log.isDebugEnabled()) return;
+		if (!log.isDebugEnabled() || size() == 0) return;
 
 		long elapsed = System.nanoTime() - start;
 
@@ -719,9 +723,26 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		sent.addAndGet(isUseHeader() ? chunk.length - StreamerHeader.HEADER_LENGTH : chunk.length);
 	}
-	
+
 	/**
-	 * Initialzes the state of the streamer
+	 * Implementation method to send an end of message message.
+	 * 
+	 * @see EndOfMessageRegister
+	 * @see EndOfMessageInboundMessageHandler
+	 * @see EndOfMessageListener
+	 * @see #isEomOnFinish()
+	 * @see #setEomOnFinish(boolean)
+	 */
+	public void sendEndOfMessage() {
+		await(latch, 100, TimeUnit.MILLISECONDS);
+		latch = new CountDownLatch(1);
+		ChannelFuture cf = channel.send(EndOfMessageRegister.END_OF_MESSAGE.getBytes(), destination);
+		cf.addListener(streamerListener);
+		await(latch, 50, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * Initialzes the state of the streamer.
 	 */
 	protected void init() {
 		sent.set(0);
@@ -732,7 +753,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * Counts down {@link #latch}
+	 * Counts down {@link #latch}.
 	 */
 	protected void countdownLatch() {
 		if (latch != null) latch.countDown();
@@ -751,6 +772,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		if (!isStreaming()) return;
 		streaming.set(false);
 		complete.set(true);
+
+		if (isEomOnFinish()) sendEndOfMessage();
 
 		future.finished(success, t);
 		future = new StreamerFuture(this);
@@ -939,6 +962,27 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		if (unit == null) throw new IllegalArgumentException("unit must be specified");
 		this.ackAwait = time;
 		this.ackAwaitUnit = unit;
+	}
+
+	/**
+	 * If true then an end of message message will be sent upon completion of
+	 * streaming. Defaults to false.
+	 *
+	 * @return true, if checks if is eom on finish
+	 * @see #sendEndOfMessage()
+	 */
+	public boolean isEomOnFinish() {
+		return eomOnFinish;
+	}
+
+	/**
+	 * Set to true to send an end of message message upon completion of streaming.
+	 *
+	 * @param eomOnFinish the eom on finish
+	 * @see #sendEndOfMessage()
+	 */
+	public void setEomOnFinish(boolean eomOnFinish) {
+		this.eomOnFinish = eomOnFinish;
 	}
 
 	/**

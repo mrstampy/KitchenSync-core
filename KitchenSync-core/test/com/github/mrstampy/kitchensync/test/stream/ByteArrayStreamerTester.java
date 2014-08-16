@@ -20,8 +20,9 @@ package com.github.mrstampy.kitchensync.test.stream;
 
 import io.netty.channel.ChannelFuture;
 
-import java.io.File;
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.InetSocketAddress;
@@ -36,10 +37,9 @@ import org.slf4j.LoggerFactory;
 import com.github.mrstampy.kitchensync.message.inbound.ByteArrayInboundMessageManager;
 import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
-import com.github.mrstampy.kitchensync.stream.BufferedInputStreamStreamer;
+import com.github.mrstampy.kitchensync.stream.ByteArrayStreamer;
 import com.github.mrstampy.kitchensync.stream.EndOfMessageListener;
 import com.github.mrstampy.kitchensync.stream.EndOfMessageRegister;
-import com.github.mrstampy.kitchensync.stream.FileStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 import com.github.mrstampy.kitchensync.stream.StreamerAckRegister;
 import com.github.mrstampy.kitchensync.stream.StreamerHeader;
@@ -49,18 +49,19 @@ import com.github.mrstampy.kitchensync.test.channel.ByteArrayChannel;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
- * The Class StreamerTester streams a large file requiring
- * {@link Streamer#ackRequired()}. The file is sent 3 times and the results are
- * fully logged at debug level.
+ * The Class StreamerTester streams any number of largish files (several megs
+ * per file, avoid gigabyte files unless you've the memory to handle it and have
+ * started this class with the appropriate memory allocation) using 2 concurrent
+ * threads at a rate of 10 chunks / second to fully exercise the
+ * {@link ByteArrayStreamer}.
  * 
  * @see StreamerAckRegister
  * @see StreamAckInboundMessageHandler
  * @see Streamer#ackRequired()
  * @see Streamer#ackReceived(long)
  */
-@SuppressWarnings("unused")
-public class StreamerTester {
-	private static final Logger log = LoggerFactory.getLogger(StreamerTester.class);
+public class ByteArrayStreamerTester {
+	private static final Logger log = LoggerFactory.getLogger(ByteArrayStreamerTester.class);
 
 	private KiSyChannel channel1;
 	private KiSyChannel channel2;
@@ -69,18 +70,18 @@ public class StreamerTester {
 
 	private AtomicLong received = new AtomicLong(0);
 
-	private Streamer<?> streamer;
+	private ByteArrayStreamer streamer;
 
-	private String file;
+	private String[] files;
 
 	/**
-	 * Specify the large file to stream.
-	 * 
-	 * @param file
-	 *          the large file's path and name
+	 * Specify the largish files to stream.
+	 *
+	 * @param files
+	 *          the files
 	 */
-	public StreamerTester(String file) {
-		this.file = file;
+	public ByteArrayStreamerTester(String... files) {
+		this.files = files;
 		init();
 	}
 
@@ -111,9 +112,8 @@ public class StreamerTester {
 	 *           the exception
 	 */
 	public void message() throws Exception {
-		streamer = getFileStreamer();
-		streamer.setConcurrentThreads(3);
-		streamer.ackRequired();
+		streamer = getByteArrayStreamer();
+		streamer.setChunksPerSecond(10);
 		startMonitorService();
 
 		stream();
@@ -124,26 +124,43 @@ public class StreamerTester {
 	/**
 	 * Stream.
 	 *
-	 * @throws InterruptedException
-	 *           the interrupted exception
+	 * @throws Exception
+	 *           the exception
 	 */
-	protected void stream() throws InterruptedException {
-		for (int i = 0; i < 3; i++) {
-			ChannelFuture future = streamer.stream();
+	protected void stream() throws Exception {
+		for (String file : files) {
+			byte[] b = getBytes(file);
+			ChannelFuture future = streamer.stream(b);
 			future.awaitUninterruptibly();
+
+			KiSyUtils.snooze(100);
+
+			streamer.sendEndOfMessage();
 
 			log.info("Success? {}", future.isSuccess());
 			BigDecimal packetLoss = (BigDecimal.ONE.subtract(new BigDecimal(received.get()).divide(
-					new BigDecimal(streamer.size()), 6, RoundingMode.HALF_UP))).multiply(new BigDecimal(100));
-			log.info("Sent: {}, Received: {}, Packet loss: {} %, Concurrent threads: {}", streamer.size(), received.get(),
+					new BigDecimal(streamer.sent()), 6, RoundingMode.HALF_UP))).multiply(new BigDecimal(100));
+			log.info("Sent: {}, Received: {}, Packet loss: {} %, Concurrent threads: {}", streamer.sent(), received.get(),
 					packetLoss.toPlainString(), streamer.getConcurrentThreads());
-			streamer.reset();
-			received.set(0);
 
-			KiSyUtils.snooze(100);
+			received.set(0);
 		}
 
-		Thread.sleep(50);
+		streamer.cancel();
+	}
+
+	private byte[] getBytes(String file) throws IOException {
+		BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+
+		try {
+			byte[] b = new byte[bis.available()];
+
+			bis.read(b);
+
+			return b;
+		} finally {
+			bis.close();
+		}
 	}
 
 	private void startMonitorService() {
@@ -157,21 +174,8 @@ public class StreamerTester {
 		}, 5, 5, TimeUnit.SECONDS);
 	}
 
-	private Streamer<?> getFileStreamer() throws Exception {
-		FileStreamer fs = new FileStreamer(new File(file), channel1, channel2.localAddress());
-
-		fs.setEomOnFinish(true);
-
-		return fs;
-	}
-
-	private Streamer<?> getBufferedInputStreamStreamer() throws Exception {
-		BufferedInputStreamStreamer biss = new BufferedInputStreamStreamer(new FileInputStream(file), channel1,
-				channel2.localAddress());
-
-		biss.setEomOnFinish(true);
-
-		return biss;
+	private ByteArrayStreamer getByteArrayStreamer() throws Exception {
+		return new ByteArrayStreamer(channel1, channel2.localAddress());
 	}
 
 	private KiSyChannel initChannel() {
@@ -225,13 +229,13 @@ public class StreamerTester {
 	 *           the exception
 	 */
 	public static void main(String[] args) throws Exception {
-		if (args.length != 1) {
-			System.out.println("Usage: java com.github.mrstampy.kitchensync.test.stream.StreamerTester [path to large file]");
-			System.out.println("where [path to large file] is the user specified path to a large file.");
+		if (args.length == 0) {
+			System.out.println("Usage: java com.github.mrstampy.kitchensync.test.stream.ByteArrayStreamerTester [paths to large files]");
+			System.out.println("where [paths to large files] is the user specified path to any number of large files.");
 			System.exit(0);
 		}
 
-		StreamerTester tester = new StreamerTester(args[0]);
+		ByteArrayStreamerTester tester = new ByteArrayStreamerTester(args);
 		tester.message();
 	}
 
