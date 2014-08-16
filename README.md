@@ -1,5 +1,12 @@
 # A Java Library for Distributed Communication
 
+# Release 2.2.3 - August 17, 2014
+
+* default chunk size for streamers increased to 2048 bytes
+* added [end of message](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/EndOfMessageRegister.java) functionality
+* created [ByteArrayStreamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/ByteArrayStreamer.java) for streaming byte arrays, [tester](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test/stream/ByteArrayStreamerTester.java) class to demonstrate usage
+* bug fixes for [BufferedInputStreamStreamers](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/BufferedInputStreamStreamer.java) which don't finish on empty streams
+
 # Release 2.2.2 - August 14, 2014
 
 * bugfix, sent value not adjusted for header
@@ -27,7 +34,7 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.2"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.3"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
 
 # KitchenSync Architecture
