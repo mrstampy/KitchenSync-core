@@ -113,7 +113,7 @@ public class ByteArrayStreamerTester {
 	 */
 	public void message() throws Exception {
 		streamer = getByteArrayStreamer();
-		streamer.setChunksPerSecond(10);
+		streamer.setChunksPerSecond(100);
 		startMonitorService();
 
 		stream();
