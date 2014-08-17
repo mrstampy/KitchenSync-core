@@ -1,5 +1,12 @@
 # A Java Library for Distributed Communication
 
+# [KitchenSync on Google+](https://plus.google.com/100262181000574738434)
+
+# Quickstart
+
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.3"/&gt;
+* [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
+
 # Release 2.2.3 - August 17, 2014
 
 * default chunk size for streamers increased to 2048 bytes
@@ -31,11 +38,6 @@
 * Initial release
 * Core functionality extracted from [KitchenSync](https://github.com/mrstampy/KitchenSync) which now remains as a simple reference implementation
 * Strong typing of abstract channels
-
-# Quickstart
-
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.3"/&gt;
-* [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
 
 # KitchenSync Architecture
 
