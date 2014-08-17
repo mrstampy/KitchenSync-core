@@ -133,7 +133,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 		if (outputStream != null) outputStream.close();
 		outputStream = new BufferedOutputStream(new PipedOutputStream(pis));
 
-		if (streamer != null && streamer.isStreaming()) cancel();
+		if (streamer != null) cancel();
 		streamer = new BufferedInputStreamStreamer(inputStream, channel, destination);
 		streamer.setFinishOnEmptyStream(false);
 
