@@ -56,7 +56,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	private static final Logger log = LoggerFactory.getLogger(ByteArrayStreamer.class);
 
 	/** The Constant PIPE_SIZE. */
-	public static final int PIPE_SIZE = 1024 * 100; // 100 kb
+	public static final int PIPE_SIZE = 1024 * 2000; // 2 mb
 	private static final int HALF_PIPE_SIZE = PIPE_SIZE / 2;
 
 	private BufferedInputStreamStreamer streamer;
@@ -335,7 +335,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 
 	/**
 	 * The value returned is the current number of bytes within the pipe, will be
-	 * a value &lt; 100 kb.
+	 * a value &lt; 2 mb.
 	 * 
 	 * @see com.github.mrstampy.kitchensync.stream.Streamer#remaining()
 	 */
