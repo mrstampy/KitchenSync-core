@@ -57,7 +57,6 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 
 	/** The Constant PIPE_SIZE. */
 	public static final int PIPE_SIZE = 1024 * 2000; // 2 mb
-	private static final int HALF_PIPE_SIZE = PIPE_SIZE / 2;
 
 	private BufferedInputStreamStreamer streamer;
 	private BufferedInputStream inputStream;
@@ -70,8 +69,11 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 
 	private CountDownLatch latch;
 
+	private int pipeSize = PIPE_SIZE;
+	private int halfPipeSize = pipeSize / 2;
+
 	/**
-	 * The Constructor.
+	 * The Constructor, using a pipe size of {@value #PIPE_SIZE}.
 	 *
 	 * @param channel
 	 *          the channel
@@ -81,6 +83,33 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	 *           the exception
 	 */
 	public ByteArrayStreamer(KiSyChannel channel, InetSocketAddress destination) throws Exception {
+		this(channel, destination, PIPE_SIZE);
+	}
+
+	/**
+	 * The Constructor.
+	 * 
+	 * @param channel
+	 * @param destination
+	 * @param pipeSize
+	 * @throws Exception
+	 */
+	public ByteArrayStreamer(KiSyChannel channel, InetSocketAddress destination, int pipeSize) throws Exception {
+		init(channel, destination, pipeSize);
+	}
+
+	/**
+	 * Exposed to facilitate reuse.
+	 * 
+	 * @param channel
+	 * @param destination
+	 * @param pipeSize
+	 * @throws Exception
+	 */
+	public void init(KiSyChannel channel, InetSocketAddress destination, int pipeSize) throws Exception {
+		this.pipeSize = pipeSize;
+		halfPipeSize = pipeSize / 2;
+
 		init(channel, destination);
 	}
 
@@ -98,7 +127,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 		log.debug("Initializing streamer from {} to {}", channel.localAddress(), destination);
 
 		if (inputStream != null) inputStream.close();
-		PipedInputStream pis = new PipedInputStream(PIPE_SIZE);
+		PipedInputStream pis = new PipedInputStream(getPipeSize());
 		inputStream = new BufferedInputStream(pis);
 
 		if (outputStream != null) outputStream.close();
@@ -157,9 +186,9 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	}
 
 	/**
-	 * Writes the message in up to {@value #PIPE_SIZE} / 2 chunks and awaits until
-	 * {@link PipedInputStream#available()} returns a value &le;
-	 * {@value #PIPE_SIZE} / 2 for each chunk to apply a constant positive
+	 * Writes the message in up to {@link #getPipeSize()} / 2 chunks and awaits
+	 * until {@link PipedInputStream#available()} returns a value &le;
+	 * {@link #getPipeSize()} / 2 for each chunk to apply a constant positive
 	 * pressure to the encapsulated {@link BufferedInputStreamStreamer}.
 	 *
 	 * @param message
@@ -172,7 +201,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 		latch = new CountDownLatch(1);
 
 		try {
-			for (int from = 0; from < messageLength; from += HALF_PIPE_SIZE) {
+			for (int from = 0; from < messageLength; from += halfPipeSize) {
 				if (cancelled.get()) return;
 
 				int to = getTo(messageLength, from);
@@ -185,7 +214,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	}
 
 	private int getTo(int messageLength, int from) {
-		int to = from + HALF_PIPE_SIZE;
+		int to = from + halfPipeSize;
 
 		return to > messageLength ? messageLength : to;
 	}
@@ -209,8 +238,8 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 
 	/**
 	 * Awaits for the {@link PipedInputStream#available()} to return a value &le;
-	 * {@value #PIPE_SIZE} / 2. Times out after 10 seconds and if timed out will
-	 * recurse until {@link #cancel()}led or successful completion.
+	 * {@link #getPipeSize()} / 2. Times out after 10 seconds and if timed out
+	 * will recurse until {@link #cancel()}led or successful completion.
 	 *
 	 * @throws IOException
 	 *           the IO exception
@@ -241,7 +270,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 			@Override
 			public void call() {
 				try {
-					if (inputStream.available() > HALF_PIPE_SIZE) return;
+					if (inputStream.available() > halfPipeSize) return;
 				} catch (IOException e) {
 					log.error("Unexpected exception", e);
 				}
@@ -583,6 +612,15 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 		streamer.sendEndOfMessage();
 
 		eom.set(true);
+	}
+
+	/**
+	 * Returns the size of the pipe used to move bytes around.
+	 * 
+	 * @return
+	 */
+	public int getPipeSize() {
+		return pipeSize;
 	}
 
 }
