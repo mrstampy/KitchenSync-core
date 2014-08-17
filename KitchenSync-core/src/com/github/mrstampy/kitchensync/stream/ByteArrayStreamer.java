@@ -618,6 +618,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	 * Returns the size of the pipe used to move bytes around.
 	 * 
 	 * @return
+	 * @see #PIPE_SIZE
 	 */
 	public int getPipeSize() {
 		return pipeSize;
