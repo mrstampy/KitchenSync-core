@@ -72,6 +72,9 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	private int pipeSize = PIPE_SIZE;
 	private int halfPipeSize = pipeSize / 2;
 
+	private int waitTime = 10;;
+	private TimeUnit waitUnits = TimeUnit.SECONDS;
+
 	/**
 	 * The Constructor, using a pipe size of {@value #PIPE_SIZE}.
 	 *
@@ -247,7 +250,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	protected void awaitFlush() throws IOException {
 		CountDownLatch cdl = new CountDownLatch(1);
 		Subscription sub = startAwaitThread(cdl);
-		boolean ok = await(cdl, 10, TimeUnit.SECONDS);
+		boolean ok = await(cdl, waitTime, waitUnits);
 		sub.unsubscribe();
 
 		if (!ok && !cancelled.get()) {
@@ -622,6 +625,21 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	 */
 	public int getPipeSize() {
 		return pipeSize;
+	}
+
+	/**
+	 * Specifies the amount of time to wait until the next {@link #getPipeSize()}
+	 * / 2 chunk can be written to the output stream. Should the wait time out the
+	 * {@link #awaitFlush()} method is recursively called. Defaults to 10 seconds.
+	 * 
+	 * @param waitTime
+	 * @param waitUnits
+	 */
+	public void setWaitTime(int waitTime, TimeUnit waitUnits) {
+		if (waitTime < 0) throw new IllegalArgumentException("wait time must be >= 0: " + waitTime);
+		if (waitUnits == null) throw new IllegalArgumentException("Units must be specified");
+		this.waitTime = waitTime;
+		this.waitUnits = waitUnits;
 	}
 
 }
