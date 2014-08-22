@@ -44,6 +44,8 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.footer.EndOfMessageFooter;
+import com.github.mrstampy.kitchensync.stream.footer.Footer;
 import com.github.mrstampy.kitchensync.stream.header.ChunkProcessor;
 import com.github.mrstampy.kitchensync.stream.header.NoProcessChunkProcessor;
 import com.github.mrstampy.kitchensync.stream.header.SequenceHeaderPrepender;
@@ -119,7 +121,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	private int ackAwait = DEFAULT_ACK_AWAIT;
 	private TimeUnit ackAwaitUnit = TimeUnit.SECONDS;
 
-	private boolean useHeader = concurrentThreads > 1;
+	private boolean processChunk = concurrentThreads > 1;
 
 	/** The sequence. */
 	protected AtomicLong sequence = new AtomicLong(0);
@@ -127,8 +129,10 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	private boolean eomOnFinish = false;
 
 	private ChunkProcessor chunkProcessor = new SequenceHeaderPrepender();
-	
+
 	private ChunkProcessor noProcessing = new NoProcessChunkProcessor();
+
+	private Footer footer = new EndOfMessageFooter();
 
 	/**
 	 * The Constructor.
@@ -175,9 +179,16 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		return getEffectiveChunkProcessor().process(this, chunk);
 	}
-	
+
+	/**
+	 * Returns the effective chunk processor, if {@link #isProcessChunk()} then
+	 * {@link #getChunkProcessor()}, else the implementation of
+	 * {@link NoProcessChunkProcessor}.
+	 *
+	 * @return the effective chunk processor
+	 */
 	protected ChunkProcessor getEffectiveChunkProcessor() {
-		return isUseHeader() ? getChunkProcessor() : noProcessing;
+		return isProcessChunk() ? getChunkProcessor() : noProcessing;
 	}
 
 	/**
@@ -433,7 +444,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	/**
 	 * Convenience method for subclasses to create the byte array for the next
 	 * chunk given the remaining number of bytes. Factors in the header size if
-	 * {@link #isUseHeader()}.
+	 * {@link #isProcessChunk()}.
 	 *
 	 * @param remaining
 	 *          the remaining
@@ -744,11 +755,12 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @see EndOfMessageListener
 	 * @see #isEomOnFinish()
 	 * @see #setEomOnFinish(boolean)
+	 * @see #setFooter(Footer)
 	 */
 	public void sendEndOfMessage() {
 		await(latch, 100, TimeUnit.MILLISECONDS);
 		latch = new CountDownLatch(1);
-		ChannelFuture cf = channel.send(EndOfMessageRegister.END_OF_MESSAGE.getBytes(), destination);
+		ChannelFuture cf = channel.send(getFooter().createFooter(), destination);
 		cf.addListener(streamerListener);
 		await(latch, 50, TimeUnit.MILLISECONDS);
 	}
@@ -762,7 +774,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		complete.set(false);
 		unsubscribe();
 		countdownLatch();
-		resetHeaderPrepender();
+		resetChunkProcessor();
+		resetFooter();
 	}
 
 	/**
@@ -885,26 +898,30 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		if (concurrentThreads < 1) throw new IllegalArgumentException("Must be > 0: " + concurrentThreads);
 		this.concurrentThreads = concurrentThreads;
 
-		if (concurrentThreads > 1) setUseHeader(true);
+		if (concurrentThreads > 1) setProcessChunk(true);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isUseHeader()
+	/**
+	 * If true then {@link #getChunkProcessor()} is used to process chunks, else
+	 * the implementation of {@link NoProcessChunkProcessor}.
+	 *
+	 * @return true, if checks if is process chunk
 	 */
-	public boolean isUseHeader() {
-		return useHeader;
+	public boolean isProcessChunk() {
+		return processChunk;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#setUseHeader(boolean)
+	/**
+	 * If set to true then {@link #getChunkProcessor()} is used to process chunks,
+	 * else the implementation of {@link NoProcessChunkProcessor}. Throws an
+	 * {@link IllegalStateException} should {@link Streamer#isStreaming()}.
+	 *
+	 * @param processChunk
+	 *          the process chunk
 	 */
-	public void setUseHeader(boolean useHeader) {
+	public void setProcessChunk(boolean processChunk) {
 		if (isStreaming()) throw new IllegalStateException("Cannot change header state when streaming");
-		this.useHeader = useHeader;
+		this.processChunk = processChunk;
 	}
 
 	/*
@@ -982,6 +999,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 *
 	 * @return true, if checks if is eom on finish
 	 * @see #sendEndOfMessage()
+	 * @see #getFooter()
 	 */
 	public boolean isEomOnFinish() {
 		return eomOnFinish;
@@ -993,9 +1011,30 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @param eomOnFinish
 	 *          the eom on finish
 	 * @see #sendEndOfMessage()
+	 * @see #getFooter()
 	 */
 	public void setEomOnFinish(boolean eomOnFinish) {
 		this.eomOnFinish = eomOnFinish;
+	}
+
+	/**
+	 * Returns the {@link Footer} used when {@link #isEomOnFinish()}.
+	 * 
+	 * @return
+	 * @see #sendEndOfMessage()
+	 */
+	public Footer getFooter() {
+		return footer;
+	}
+
+	/**
+	 * Sets the {@link Footer} to use when {@link #isEomOnFinish()}.
+	 * 
+	 * @param footer
+	 * @see #sendEndOfMessage()
+	 */
+	public void setFooter(Footer footer) {
+		this.footer = footer;
 	}
 
 	/**
@@ -1019,32 +1058,42 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	}
 
-	/**
-	 * Returns the {@link ChunkProcessor} associated with this instance. The
-	 * default is {@link SequenceHeaderPrepender}.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @return the {@link ChunkProcessor}
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getChunkProcessor()
 	 */
 	public ChunkProcessor getChunkProcessor() {
 		return chunkProcessor;
 	}
 
-	/**
-	 * Set a custom {@link ChunkProcessor} for this instance.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param headerPrepender
+	 * @see
+	 * com.github.mrstampy.kitchensync.stream.Streamer#setChunkProcessor(com.github
+	 * .mrstampy.kitchensync.stream.header.ChunkProcessor)
 	 */
-	public void setChunkProcessor(ChunkProcessor headerPrepender) {
-		this.chunkProcessor = headerPrepender;
+	public void setChunkProcessor(ChunkProcessor chunkProcessor) {
+		this.chunkProcessor = chunkProcessor;
 	}
 
 	/**
 	 * Invoked from {@link #init()} and invokes {@link ChunkProcessor#reset()}.
 	 */
-	protected void resetHeaderPrepender() {
+	protected void resetChunkProcessor() {
 		if (getChunkProcessor() == null) return;
 
 		getChunkProcessor().reset();
+	}
+
+	/**
+	 * Invoked from {@link #init()} and invokes {@link Footer#reset()}.
+	 */
+	protected void resetFooter() {
+		if (getFooter() == null) return;
+
+		getFooter().reset();
 	}
 
 }

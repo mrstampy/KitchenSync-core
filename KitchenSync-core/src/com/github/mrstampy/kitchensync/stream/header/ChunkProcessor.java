@@ -24,7 +24,7 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
 /**
  * The Interface ChunkProcessor is used by {@link AbstractStreamer} to process a
  * chunk prior to sending ie. add a header, encrypt etc. Implementations are
- * invoked when {@link AbstractStreamer#isUseHeader()}, immediately after the
+ * invoked when {@link Streamer#isProcessChunk()}, immediately after the
  * latest chunk of the message has been acquired.<br><br>
  * 
  * @see AbstractStreamer#setChunkProcessor(ChunkProcessor)

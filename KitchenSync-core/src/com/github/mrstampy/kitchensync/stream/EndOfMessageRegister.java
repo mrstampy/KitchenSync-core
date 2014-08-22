@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.footer.EndOfMessageFooter;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 
 /**
@@ -40,9 +41,6 @@ import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessage
  */
 public class EndOfMessageRegister {
 	private static final Logger log = LoggerFactory.getLogger(EndOfMessageRegister.class);
-
-	/** The Constant END_OF_MESSAGE. */
-	public static final String END_OF_MESSAGE = "EOM:";
 
 	private static List<EndOfMessageListener> eomListeners = new ArrayList<EndOfMessageListener>();
 	private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -121,11 +119,14 @@ public class EndOfMessageRegister {
 	 * @see EndOfMessageInboundMessageHandler
 	 */
 	public static boolean isEndOfMessage(byte[] message) {
-		if (message == null || message.length < END_OF_MESSAGE.length()) return false;
+		byte[] endOfMessage = EndOfMessageFooter.END_OF_MESSAGE.getBytes();
+		int length = endOfMessage.length;
 
-		byte[] b = Arrays.copyOfRange(message, 0, END_OF_MESSAGE.length());
+		if (message == null || message.length < length) return false;
 
-		return Arrays.equals(b, END_OF_MESSAGE.getBytes());
+		byte[] b = Arrays.copyOfRange(message, 0, length);
+
+		return Arrays.equals(b, endOfMessage);
 	}
 
 	private EndOfMessageRegister() {

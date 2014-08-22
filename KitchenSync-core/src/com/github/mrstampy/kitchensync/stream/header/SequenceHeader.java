@@ -30,7 +30,8 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
  * {@link #isHeaderMessage(byte[])} and can parse a chunk with a header via its
  * constructor.
  * 
- * @see Streamer#setUseHeader(boolean)
+ * @see Streamer#setProcessChunk(boolean)
+ * @see SequenceHeaderPrepender
  */
 public class SequenceHeader implements Comparable<SequenceHeader> {
 

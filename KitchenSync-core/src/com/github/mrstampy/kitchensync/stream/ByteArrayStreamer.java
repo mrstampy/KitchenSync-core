@@ -52,13 +52,12 @@ import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessage
  * @author burton
  *
  */
-public class ByteArrayStreamer implements Streamer<byte[]> {
+public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], BufferedInputStreamStreamer> {
 	private static final Logger log = LoggerFactory.getLogger(ByteArrayStreamer.class);
 
 	/** The Constant PIPE_SIZE. */
 	public static final int PIPE_SIZE = 1024 * 2000; // 2 mb
 
-	private BufferedInputStreamStreamer streamer;
 	private BufferedInputStream inputStream;
 	private BufferedOutputStream outputStream;
 
@@ -74,6 +73,9 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 
 	private int waitTime = 10;;
 	private TimeUnit waitUnits = TimeUnit.SECONDS;
+
+	private KiSyChannel channel;
+	private InetSocketAddress destination;
 
 	/**
 	 * The Constructor, using a pipe size of {@value #PIPE_SIZE}.
@@ -128,6 +130,9 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	 */
 	public void init(KiSyChannel channel, InetSocketAddress destination) throws Exception {
 		log.debug("Initializing streamer from {} to {}", channel.localAddress(), destination);
+		
+		this.channel = channel;
+		this.destination = destination;
 
 		if (inputStream != null) inputStream.close();
 		PipedInputStream pis = new PipedInputStream(getPipeSize());
@@ -136,11 +141,18 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 		if (outputStream != null) outputStream.close();
 		outputStream = new BufferedOutputStream(new PipedOutputStream(pis));
 
-		if (streamer != null) cancel();
-		streamer = new BufferedInputStreamStreamer(inputStream, channel, destination);
-		streamer.setFinishOnEmptyStream(false);
+		if (getStreamer() != null) cancel();
+		initializeStreamer();
 
 		cancelled.set(false);
+	}
+
+	@Override
+	protected BufferedInputStreamStreamer createStreamer() throws Exception {
+		BufferedInputStreamStreamer streamer = new BufferedInputStreamStreamer(inputStream, channel, destination);
+		streamer.setFinishOnEmptyStream(false);
+
+		return streamer;
 	}
 
 	/**
@@ -160,7 +172,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 		final StreamerFuture sf = new StreamerFuture(this);
 
 		if (eom.get()) {
-			streamer.init();
+			getStreamer().init();
 			eom.set(false);
 		}
 
@@ -286,73 +298,12 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#pause()
-	 */
-	@Override
-	public void pause() {
-		streamer.pause();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#ackRequired()
-	 */
-	@Override
-	public void ackRequired() {
-		streamer.ackRequired();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#setChunkSize(int)
-	 */
-	@Override
-	public void setChunkSize(int chunkSize) {
-		streamer.setChunkSize(chunkSize);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#fullThrottle()
-	 */
-	@Override
-	public void fullThrottle() {
-		streamer.fullThrottle();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
 	 * @see com.github.mrstampy.kitchensync.stream.Streamer#cancel()
 	 */
 	@Override
 	public void cancel() {
-		streamer.cancel();
+		getStreamer().cancel();
 		cancelled.set(true);
-	}
-
-	/**
-	 * Not implemented.
-	 *
-	 * @param newPosition
-	 *          the new position
-	 */
-	@Override
-	public void resetPosition(int newPosition) {
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#stream()
-	 */
-	@Override
-	public ChannelFuture stream() {
-		return streamer.stream();
 	}
 
 	/**
@@ -366,243 +317,6 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	}
 
 	/**
-	 * The value returned is the current number of bytes within the pipe, will be
-	 * a value &lt; 2 mb.
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#remaining()
-	 */
-	@Override
-	public long remaining() {
-		return streamer.remaining();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#sent()
-	 */
-	@Override
-	public long sent() {
-		return streamer.sent();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isComplete()
-	 */
-	@Override
-	public boolean isComplete() {
-		return streamer.isComplete();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isStreaming()
-	 */
-	@Override
-	public boolean isStreaming() {
-		return streamer.isStreaming();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getFuture()
-	 */
-	@Override
-	public ChannelFuture getFuture() {
-		return streamer.getFuture();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getChannel()
-	 */
-	@Override
-	public KiSyChannel getChannel() {
-		return streamer.getChannel();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.Streamer#setChannel(com.github.mrstampy
-	 * .kitchensync.netty.channel.KiSyChannel)
-	 */
-	@Override
-	public void setChannel(KiSyChannel channel) {
-		streamer.setChannel(channel);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getChunkSize()
-	 */
-	@Override
-	public int getChunkSize() {
-		return streamer.getChunkSize();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getDestination()
-	 */
-	@Override
-	public InetSocketAddress getDestination() {
-		return streamer.getDestination();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.Streamer#setDestination(java.net
-	 * .InetSocketAddress)
-	 */
-	@Override
-	public void setDestination(InetSocketAddress destination) {
-		streamer.setDestination(destination);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#reset()
-	 */
-	@Override
-	public void reset() {
-		streamer.reset();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#resetSequence(long)
-	 */
-	@Override
-	public void resetSequence(long sequence) {
-		streamer.resetSequence(sequence);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.Streamer#setChunksPerSecond(int)
-	 */
-	@Override
-	public void setChunksPerSecond(int chunksPerSecond) {
-		streamer.setChunksPerSecond(chunksPerSecond);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getChunksPerSecond()
-	 */
-	@Override
-	public int getChunksPerSecond() {
-		return streamer.getChunksPerSecond();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isChunksPerSecond()
-	 */
-	@Override
-	public boolean isChunksPerSecond() {
-		return streamer.isChunksPerSecond();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isFullThrottle()
-	 */
-	@Override
-	public boolean isFullThrottle() {
-		return streamer.isFullThrottle();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isAckRequired()
-	 */
-	@Override
-	public boolean isAckRequired() {
-		return streamer.isAckRequired();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#ackReceived(long)
-	 */
-	@Override
-	public void ackReceived(long sumOfBytesInChunk) {
-		streamer.ackReceived(sumOfBytesInChunk);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.Streamer#setConcurrentThreads(int)
-	 */
-	@Override
-	public void setConcurrentThreads(int concurrentThreads) {
-		streamer.setConcurrentThreads(concurrentThreads);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getConcurrentThreads()
-	 */
-	@Override
-	public int getConcurrentThreads() {
-		return streamer.getConcurrentThreads();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#setUseHeader(boolean)
-	 */
-	@Override
-	public void setUseHeader(boolean useHeader) {
-		streamer.setUseHeader(useHeader);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isUseHeader()
-	 */
-	@Override
-	public boolean isUseHeader() {
-		return streamer.isUseHeader();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getSequence()
-	 */
-	@Override
-	public long getSequence() {
-		return streamer.getSequence();
-	}
-
-	/**
 	 * Send end of message.
 	 * 
 	 * @see EndOfMessageRegister
@@ -612,7 +326,7 @@ public class ByteArrayStreamer implements Streamer<byte[]> {
 	public void sendEndOfMessage() {
 		await(latch, 100, TimeUnit.MILLISECONDS);
 
-		streamer.sendEndOfMessage();
+		getStreamer().sendEndOfMessage();
 
 		eom.set(true);
 	}

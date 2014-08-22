@@ -24,6 +24,9 @@ import java.net.InetSocketAddress;
 
 import com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.footer.Footer;
+import com.github.mrstampy.kitchensync.stream.header.ChunkProcessor;
+import com.github.mrstampy.kitchensync.stream.header.NoProcessChunkProcessor;
 import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 
 /**
@@ -320,31 +323,76 @@ public interface Streamer<MSG> {
 	int getConcurrentThreads();
 
 	/**
-	 * If true will prepend a header containing the {@link #getSequence()} value
-	 * to each chunk. The size of each chunk will be reduced by
-	 * any header length so that each message sent has a length
-	 * of {@link #getChunkSize()}.<br>
-	 * <br>
-	 * 
-	 * Setting the number of {@link #setConcurrentThreads(int)} to a value of &gt; 1
-	 * should set this value to true.
-	 *
-	 * @param useHeader
-	 *          the use header
-	 */
-	void setUseHeader(boolean useHeader);
-
-	/**
-	 * Checks if is use header.
-	 *
-	 * @return true, if checks if is use header
-	 */
-	boolean isUseHeader();
-
-	/**
 	 * Gets the current chunk number.
 	 *
 	 * @return the sequence
 	 */
 	long getSequence();
+
+	/**
+	 * If true then the {@link #getChunkProcessor()} is used to process each chunk
+	 * acquired. {@link NoProcessChunkProcessor} is provided for convenience when
+	 * this value is false.
+	 * 
+	 * @return
+	 */
+	boolean isProcessChunk();
+
+	/**
+	 * Set to true to use {@link #getChunkProcessor()} to process each chunk.
+	 * 
+	 * @param processChunk
+	 */
+	void setProcessChunk(boolean processChunk);
+
+	/**
+	 * Returns the {@link ChunkProcessor} used when {@link #isProcessChunk()}.
+	 * 
+	 * @return
+	 */
+	ChunkProcessor getChunkProcessor();
+
+	/**
+	 * Sets the {@link ChunkProcessor} used when {@link #isProcessChunk()}.
+	 * 
+	 * @param chunkProcessor
+	 */
+	void setChunkProcessor(ChunkProcessor chunkProcessor);
+
+	/**
+	 * If true then an end of message message will be sent upon completion of
+	 * streaming. Defaults to false.
+	 *
+	 * @return true, if checks if is eom on finish
+	 * @see #sendEndOfMessage()
+	 * @see #getFooter()
+	 */
+	boolean isEomOnFinish();
+
+	/**
+	 * Set to true to send an end of message message upon completion of streaming.
+	 *
+	 * @param eomOnFinish
+	 *          the eom on finish
+	 * @see #sendEndOfMessage()
+	 * @see #getFooter()
+	 */
+	void setEomOnFinish(boolean eomOnFinish);
+
+	/**
+	 * Returns the {@link Footer} used when {@link #isEomOnFinish()}.
+	 * 
+	 * @return
+	 * @see #sendEndOfMessage()
+	 */
+	Footer getFooter();
+
+	/**
+	 * Sets the {@link Footer} to use when {@link #isEomOnFinish()}.
+	 * 
+	 * @param footer
+	 * @see #sendEndOfMessage()
+	 */
+	void setFooter(Footer footer);
+
 }

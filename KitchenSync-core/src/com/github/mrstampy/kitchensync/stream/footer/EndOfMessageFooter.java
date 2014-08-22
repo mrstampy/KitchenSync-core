@@ -16,45 +16,40 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  * 
  */
-package com.github.mrstampy.kitchensync.stream.header;
-
-import io.netty.buffer.ByteBuf;
+package com.github.mrstampy.kitchensync.stream.footer;
 
 import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
- * Prepends the sequence to the header. This is the default
- * {@link ChunkProcessor} when {@link Streamer#isProcessChunk()}.
+ * The Class EndOfMessageFooter creates a message consisting of
+ * {@value #END_OF_MESSAGE}. It is the default {@link Footer} used by
+ * {@link AbstractStreamer} implementations.
  * 
- * @see SequenceHeader
- * @see AbstractStreamer#setChunkProcessor(ChunkProcessor)
+ * @see Streamer#isEomOnFinish()
  */
-public class SequenceHeaderPrepender extends AbstractChunkProcessor {
+public class EndOfMessageFooter implements Footer {
+
+	/** The Constant END_OF_MESSAGE. */
+	public static final String END_OF_MESSAGE = "EOM:";
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.header.ChunkProcesor#sizeInBytes()
+	 * @see com.github.mrstampy.kitchensync.stream.footer.Footer#createFooter()
 	 */
 	@Override
-	public int sizeInBytes() {
-		return SequenceHeader.HEADER_LENGTH;
+	public byte[] createFooter() {
+		return END_OF_MESSAGE.getBytes();
 	}
 
 	/*
 	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.footer.Footer#reset()
 	 */
 	@Override
-	protected ByteBuf processImpl(Streamer<?> streamer, byte[] message) {
-		ByteBuf buf = createByteBuf(sizeInBytes() + message.length);
-		
-		buf.writeBytes(SequenceHeader.SEQUENCE_HEADER_BYTES);
-		buf.writeLong(streamer.getSequence());
-		buf.writeBytes(message);
-		
-		return buf;
+	public void reset() {
 	}
 
 }

@@ -26,7 +26,7 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
  * {@link ChunkProcessor}, used by {@link AbstractStreamer} when headers are not
  * required.
  * 
- * @see Streamer#isUseHeader()
+ * @see Streamer#isProcessChunk()
  */
 public class NoProcessChunkProcessor implements ChunkProcessor {
 

@@ -197,14 +197,14 @@ public class ByteArrayStreamerTester {
 
 			@Override
 			public void messageReceived(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
-				received.addAndGet(streamer.isUseHeader() ? message.length - SequenceHeader.HEADER_LENGTH : message.length);
+				received.addAndGet(streamer.isProcessChunk() ? message.length - SequenceHeader.HEADER_LENGTH : message.length);
 
 				if (streamer.isAckRequired()) {
 					long sumOfBytes = StreamerAckRegister.convertToLong(message);
 					channel.send(StreamerAckRegister.createAckResponse(sumOfBytes), sender);
 				}
 
-				if (streamer.isUseHeader()) checkHeader(message);
+				if (streamer.isProcessChunk()) checkHeader(message);
 			}
 
 			private void checkHeader(byte[] message) {
