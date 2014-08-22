@@ -44,6 +44,8 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.header.HeaderPrepender;
+import com.github.mrstampy.kitchensync.stream.header.SequenceHeaderPrepender;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
@@ -123,6 +125,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private boolean eomOnFinish = false;
 
+	private HeaderPrepender headerPrepender = new SequenceHeaderPrepender();
+
 	/**
 	 * The Constructor.
 	 *
@@ -164,7 +168,9 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		if (chunk == null || chunk.length == 0) return chunk;
 
-		return isUseHeader() ? StreamerHeader.addHeader(nextSequence(), chunk) : chunk;
+		incrementSequence();
+
+		return isUseHeader() ? getHeaderPrepender().prependHeader(this, chunk) : chunk;
 	}
 
 	/**
@@ -427,7 +433,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @return the byte[]
 	 */
 	protected byte[] createByteArray(int remaining) {
-		int header = isUseHeader() ? StreamerHeader.HEADER_LENGTH : 0;
+		int header = isUseHeader() ? getHeaderPrepender().sizeInBytes() : 0;
 		int chunkSize = getChunkSize() - header;
 
 		chunkSize = remaining > chunkSize ? chunkSize : remaining;
@@ -721,7 +727,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		if (isFullThrottle()) cf.addListener(streamerListener);
 
-		sent.addAndGet(isUseHeader() ? chunk.length - StreamerHeader.HEADER_LENGTH : chunk.length);
+		sent.addAndGet(isUseHeader() ? chunk.length - getHeaderPrepender().sizeInBytes() : chunk.length);
 	}
 
 	/**
@@ -750,6 +756,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		complete.set(false);
 		unsubscribe();
 		countdownLatch();
+		resetHeaderPrepender();
 	}
 
 	/**
@@ -917,7 +924,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	private int getEffectiveChunkSize() {
-		return isUseHeader() ? getChunkSize() - StreamerHeader.HEADER_LENGTH : getChunkSize();
+		return isUseHeader() ? getChunkSize() - getHeaderPrepender().sizeInBytes() : getChunkSize();
 	}
 
 	/**
@@ -942,10 +949,9 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	/**
 	 * Next sequence.
 	 *
-	 * @return the long
 	 */
-	protected long nextSequence() {
-		return sequence.incrementAndGet();
+	protected void incrementSequence() {
+		sequence.incrementAndGet();
 	}
 
 	/**
@@ -978,7 +984,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	/**
 	 * Set to true to send an end of message message upon completion of streaming.
 	 *
-	 * @param eomOnFinish the eom on finish
+	 * @param eomOnFinish
+	 *          the eom on finish
 	 * @see #sendEndOfMessage()
 	 */
 	public void setEomOnFinish(boolean eomOnFinish) {
@@ -1004,6 +1011,34 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 			if (latch != null) latch.countDown();
 		}
 
+	}
+
+	/**
+	 * Returns the {@link HeaderPrepender} associated with this instance. The
+	 * default is {@link SequenceHeaderPrepender}.
+	 * 
+	 * @return the {@link HeaderPrepender}
+	 */
+	public HeaderPrepender getHeaderPrepender() {
+		return headerPrepender;
+	}
+
+	/**
+	 * Set a custom {@link HeaderPrepender} for this instance.
+	 * 
+	 * @param headerPrepender
+	 */
+	public void setHeaderPrepender(HeaderPrepender headerPrepender) {
+		this.headerPrepender = headerPrepender;
+	}
+
+	/**
+	 * Invoked from {@link #init()} and invokes {@link HeaderPrepender#reset()}.
+	 */
+	protected void resetHeaderPrepender() {
+		if (getHeaderPrepender() == null) return;
+
+		getHeaderPrepender().reset();
 	}
 
 }

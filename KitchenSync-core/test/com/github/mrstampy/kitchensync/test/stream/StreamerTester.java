@@ -42,7 +42,7 @@ import com.github.mrstampy.kitchensync.stream.EndOfMessageRegister;
 import com.github.mrstampy.kitchensync.stream.FileStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 import com.github.mrstampy.kitchensync.stream.StreamerAckRegister;
-import com.github.mrstampy.kitchensync.stream.StreamerHeader;
+import com.github.mrstampy.kitchensync.stream.header.SequenceHeader;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 import com.github.mrstampy.kitchensync.test.channel.ByteArrayChannel;
@@ -193,7 +193,7 @@ public class StreamerTester {
 
 			@Override
 			public void messageReceived(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
-				received.addAndGet(streamer.isUseHeader() ? message.length - StreamerHeader.HEADER_LENGTH : message.length);
+				received.addAndGet(streamer.isUseHeader() ? message.length - SequenceHeader.HEADER_LENGTH : message.length);
 
 				if (streamer.isAckRequired()) {
 					long sumOfBytes = StreamerAckRegister.convertToLong(message);
@@ -204,7 +204,7 @@ public class StreamerTester {
 			}
 
 			private void checkHeader(byte[] message) {
-				StreamerHeader header = new StreamerHeader(message);
+				SequenceHeader header = new SequenceHeader(message);
 				if (header.getSequence() % 100000 == 0) log.debug("Received sequence {}", header.getSequence());
 			}
 

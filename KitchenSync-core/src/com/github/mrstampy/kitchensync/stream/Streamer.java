@@ -322,7 +322,7 @@ public interface Streamer<MSG> {
 	/**
 	 * If true will prepend a header containing the {@link #getSequence()} value
 	 * to each chunk. The size of each chunk will be reduced by
-	 * {@link StreamerHeader#HEADER_LENGTH} so that each message sent has a length
+	 * any header length so that each message sent has a length
 	 * of {@link #getChunkSize()}.<br>
 	 * <br>
 	 * 
@@ -331,7 +331,6 @@ public interface Streamer<MSG> {
 	 *
 	 * @param useHeader
 	 *          the use header
-	 * @see StreamerHeader
 	 */
 	void setUseHeader(boolean useHeader);
 

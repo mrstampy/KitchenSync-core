@@ -16,22 +16,23 @@
  * Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  * 
  */
-package com.github.mrstampy.kitchensync.stream;
+package com.github.mrstampy.kitchensync.stream.header;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 import java.util.Arrays;
 
+import com.github.mrstampy.kitchensync.stream.Streamer;
+
 /**
  * The Class StreamerHeader provides the ability to determine if a message
- * {@link #isHeaderMessage(byte[])}, can prepend a header via
- * {@link #addHeader(long, byte[])}, and can parse a chunk with a header via its
+ * {@link #isHeaderMessage(byte[])} and can parse a chunk with a header via its
  * constructor.
  * 
  * @see Streamer#setUseHeader(boolean)
  */
-public class StreamerHeader implements Comparable<StreamerHeader>{
+public class SequenceHeader implements Comparable<SequenceHeader> {
 
 	/** The Constant SEQUENCE_HEADER, 'Sequence:'. */
 	public static final String SEQUENCE_HEADER = "Sequence:";
@@ -50,14 +51,13 @@ public class StreamerHeader implements Comparable<StreamerHeader>{
 	private byte[] message;
 
 	/**
-	 * The Constructor.
+	 * The Constructor, assuming that
+	 * {@link SequenceHeader#isHeaderMessage(byte[])} has been appropriately used.
 	 *
 	 * @param chunk
 	 *          the chunk
 	 */
-	public StreamerHeader(byte[] chunk) {
-		if (!isHeaderMessage(chunk)) throw new IllegalArgumentException("Message chunk has no header");
-
+	public SequenceHeader(byte[] chunk) {
 		setSequence(Arrays.copyOfRange(chunk, SEQUENCE_HEADER_BYTES.length, HEADER_LENGTH));
 		setMessage(Arrays.copyOfRange(chunk, HEADER_LENGTH, chunk.length));
 	}
@@ -82,12 +82,14 @@ public class StreamerHeader implements Comparable<StreamerHeader>{
 
 	/**
 	 * Facilitates ordering by sequence.
-	 * 
-	 * @return negative or zero if ordered, positive otherwise 
+	 *
+	 * @param o
+	 *          the o
+	 * @return negative or zero if ordered, positive otherwise
 	 */
 	@Override
-	public int compareTo(StreamerHeader o) {
-		return (int)(getSequence() - o.getSequence());
+	public int compareTo(SequenceHeader o) {
+		return (int) (getSequence() - o.getSequence());
 	}
 
 	private void setSequence(byte[] seqBytes) {
@@ -113,25 +115,6 @@ public class StreamerHeader implements Comparable<StreamerHeader>{
 		byte[] b = Arrays.copyOfRange(chunk, 0, SEQUENCE_HEADER_BYTES.length);
 
 		return Arrays.equals(b, SEQUENCE_HEADER_BYTES);
-	}
-
-	/**
-	 * Adds the header. The sequence is encoded as an 8 byte chunk.
-	 *
-	 * @param sequence
-	 *          the sequence
-	 * @param chunk
-	 *          the chunk
-	 * @return the byte[]
-	 */
-	public static byte[] addHeader(long sequence, byte[] chunk) {
-		ByteBuf buf = Unpooled.buffer(HEADER_LENGTH + chunk.length);
-
-		buf.writeBytes(SEQUENCE_HEADER_BYTES);
-		buf.writeLong(sequence);
-		buf.writeBytes(chunk);
-
-		return buf.array();
 	}
 
 }
