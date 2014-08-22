@@ -22,37 +22,44 @@ import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
- * The Interface HeaderPrepender is used by {@link AbstractStreamer} to prepend
- * a header to a message.
+ * The Class NoProcessChunkProcessor is a blank implementation of a
+ * {@link ChunkProcessor}, used by {@link AbstractStreamer} when headers are not
+ * required.
  * 
- * @see AbstractStreamer#setHeaderPrepender(HeaderPrepender)
+ * @see Streamer#isUseHeader()
  */
-public interface HeaderPrepender {
+public class NoProcessChunkProcessor implements ChunkProcessor {
 
-	/**
-	 * Size in bytes of the header (fixed length).
-	 *
-	 * @return the int
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.stream.header.ChunkProcessor#sizeInBytes()
 	 */
-	int sizeInBytes();
+	@Override
+	public int sizeInBytes() {
+		return 0;
+	}
 
-	/**
-	 * Prepend a header to the message. The {@link Streamer} is provided for any
-	 * required context.
-	 *
-	 * @param streamer
-	 *          the streamer
-	 * @param message
-	 *          the message
-	 * @return the byte[] with header
-	 * @see Streamer#getSequence()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.stream.header.ChunkProcessor#process(com
+	 * .github.mrstampy.kitchensync.stream.Streamer, byte[])
 	 */
-	byte[] prependHeader(Streamer<?> streamer, byte[] message);
+	@Override
+	public byte[] process(Streamer<?> streamer, byte[] chunk) {
+		return chunk;
+	}
 
-	/**
-	 * Reset the state of the HeaderPrepender, called on {@link AbstractStreamer}
-	 * initialization.
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.header.ChunkProcessor#reset()
 	 */
-	void reset();
+	@Override
+	public void reset() {
+	}
 
 }

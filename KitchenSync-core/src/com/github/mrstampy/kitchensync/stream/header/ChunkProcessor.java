@@ -18,50 +18,46 @@
  */
 package com.github.mrstampy.kitchensync.stream.header;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
- * Convenience abstract implementation of a {@link HeaderPrepender}.
+ * The Interface ChunkProcessor is used by {@link AbstractStreamer} to process a
+ * chunk prior to sending ie. add a header, encrypt etc. Implementations are
+ * invoked when {@link AbstractStreamer#isUseHeader()}, immediately after the
+ * latest chunk of the message has been acquired.<br><br>
+ * 
+ * @see AbstractStreamer#setChunkProcessor(ChunkProcessor)
  */
-public abstract class AbstractHeaderPrepender implements HeaderPrepender {
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.header.HeaderPrepender#prependHeader
-	 * (com.github.mrstampy.kitchensync.stream.Streamer, byte[])
-	 */
-	@Override
-	public final byte[] prependHeader(Streamer<?> streamer, byte[] message) {
-		ByteBuf buf = Unpooled.buffer(sizeInBytes() + message.length);
-		addHeaderDetail(streamer, buf);
-		buf.writeBytes(message);
-
-		return buf.array();
-	}
+public interface ChunkProcessor {
 
 	/**
-	 * Implement to add just the header detail to the supplied {@link ByteBuf}.
+	 * Size in bytes of any additional meta information added to the message
+	 * (fixed length). The value returned will be subtracted from
+	 * {@link Streamer#getChunkSize()} when determining the size of chunk to
+	 * obtain.
+	 *
+	 * @return the size
+	 */
+	int sizeInBytes();
+
+	/**
+	 * Process the message. The {@link Streamer} is provided for any required
+	 * context.
 	 *
 	 * @param streamer
 	 *          the streamer
-	 * @param buf
-	 *          the buf
+	 * @param message
+	 *          the message
+	 * @return the byte[] with header
+	 * @see Streamer#getSequence()
 	 */
-	protected abstract void addHeaderDetail(Streamer<?> streamer, ByteBuf buf);
+	byte[] process(Streamer<?> streamer, byte[] chunk);
 
 	/**
-	 * Blank implementation, override as necessary. Invoked when the
-	 * {@link AbstractStreamer} is initialized
+	 * Reset the state of the ChunkProcessor, called on {@link AbstractStreamer}
+	 * initialization.
 	 */
-	@Override
-	public void reset() {
-
-	}
+	void reset();
 
 }

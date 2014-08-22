@@ -44,7 +44,8 @@ import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
-import com.github.mrstampy.kitchensync.stream.header.HeaderPrepender;
+import com.github.mrstampy.kitchensync.stream.header.ChunkProcessor;
+import com.github.mrstampy.kitchensync.stream.header.NoProcessChunkProcessor;
 import com.github.mrstampy.kitchensync.stream.header.SequenceHeaderPrepender;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
@@ -125,7 +126,9 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private boolean eomOnFinish = false;
 
-	private HeaderPrepender headerPrepender = new SequenceHeaderPrepender();
+	private ChunkProcessor chunkProcessor = new SequenceHeaderPrepender();
+	
+	private ChunkProcessor noProcessing = new NoProcessChunkProcessor();
 
 	/**
 	 * The Constructor.
@@ -170,7 +173,11 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		incrementSequence();
 
-		return isUseHeader() ? getHeaderPrepender().prependHeader(this, chunk) : chunk;
+		return getEffectiveChunkProcessor().process(this, chunk);
+	}
+	
+	protected ChunkProcessor getEffectiveChunkProcessor() {
+		return isUseHeader() ? getChunkProcessor() : noProcessing;
 	}
 
 	/**
@@ -433,8 +440,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @return the byte[]
 	 */
 	protected byte[] createByteArray(int remaining) {
-		int header = isUseHeader() ? getHeaderPrepender().sizeInBytes() : 0;
-		int chunkSize = getChunkSize() - header;
+		int chunkSize = getEffectiveChunkSize();
 
 		chunkSize = remaining > chunkSize ? chunkSize : remaining;
 
@@ -727,7 +733,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		if (isFullThrottle()) cf.addListener(streamerListener);
 
-		sent.addAndGet(isUseHeader() ? chunk.length - getHeaderPrepender().sizeInBytes() : chunk.length);
+		sent.addAndGet(chunk.length - getEffectiveChunkProcessor().sizeInBytes());
 	}
 
 	/**
@@ -924,7 +930,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	private int getEffectiveChunkSize() {
-		return isUseHeader() ? getChunkSize() - getHeaderPrepender().sizeInBytes() : getChunkSize();
+		return getChunkSize() - getEffectiveChunkProcessor().sizeInBytes();
 	}
 
 	/**
@@ -1014,31 +1020,31 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	/**
-	 * Returns the {@link HeaderPrepender} associated with this instance. The
+	 * Returns the {@link ChunkProcessor} associated with this instance. The
 	 * default is {@link SequenceHeaderPrepender}.
 	 * 
-	 * @return the {@link HeaderPrepender}
+	 * @return the {@link ChunkProcessor}
 	 */
-	public HeaderPrepender getHeaderPrepender() {
-		return headerPrepender;
+	public ChunkProcessor getChunkProcessor() {
+		return chunkProcessor;
 	}
 
 	/**
-	 * Set a custom {@link HeaderPrepender} for this instance.
+	 * Set a custom {@link ChunkProcessor} for this instance.
 	 * 
 	 * @param headerPrepender
 	 */
-	public void setHeaderPrepender(HeaderPrepender headerPrepender) {
-		this.headerPrepender = headerPrepender;
+	public void setChunkProcessor(ChunkProcessor headerPrepender) {
+		this.chunkProcessor = headerPrepender;
 	}
 
 	/**
-	 * Invoked from {@link #init()} and invokes {@link HeaderPrepender#reset()}.
+	 * Invoked from {@link #init()} and invokes {@link ChunkProcessor#reset()}.
 	 */
 	protected void resetHeaderPrepender() {
-		if (getHeaderPrepender() == null) return;
+		if (getChunkProcessor() == null) return;
 
-		getHeaderPrepender().reset();
+		getChunkProcessor().reset();
 	}
 
 }
