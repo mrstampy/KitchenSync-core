@@ -78,7 +78,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	private InetSocketAddress destination;
 
 	/**
-	 * The Constructor, using a pipe size of {@value #PIPE_SIZE}.
+	 * The Constructor, using the default {@value #PIPE_SIZE} byte pipe.
 	 *
 	 * @param channel
 	 *          the channel

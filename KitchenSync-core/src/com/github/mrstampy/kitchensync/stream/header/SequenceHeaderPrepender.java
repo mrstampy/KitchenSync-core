@@ -20,7 +20,6 @@ package com.github.mrstampy.kitchensync.stream.header;
 
 import io.netty.buffer.ByteBuf;
 
-import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
@@ -28,7 +27,7 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
  * {@link ChunkProcessor} when {@link Streamer#isProcessChunk()}.
  * 
  * @see SequenceHeader
- * @see AbstractStreamer#setChunkProcessor(ChunkProcessor)
+ * @see Streamer#setChunkProcessor(ChunkProcessor)
  */
 public class SequenceHeaderPrepender extends AbstractChunkProcessor {
 
