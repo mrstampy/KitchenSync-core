@@ -13,6 +13,7 @@
 * Added [ChunkProcessor](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/header/ChunkProcessor.java) and [Footer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/footer/Footer.java) for transforming chunks and sending end of message messages, respectively
 * Added a throttle for full throttle and acknowledgement messages to slow down throughput.
 * Improvements to [ByteArrayStreamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/ByteArrayStreamer.java).
+* Upgraded Netty to version 4.0.23.Final
 
 # Release 2.2.3 - August 17, 2014
 
