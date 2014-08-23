@@ -190,7 +190,7 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 		in = (message instanceof BufferedInputStream) ? (BufferedInputStream) message : new BufferedInputStream(message);
 
 		setSize(in.available());
-		if (markSupported()) in.mark((int) size());
+		in.mark((int) size());
 	}
 
 	/**
