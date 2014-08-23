@@ -1116,7 +1116,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * 
 	 * @return the value used to throttle
 	 * @see #isAckRequired()
-	 * @see #ackReceived(long)
+	 * @see #awaitAck()
 	 */
 	public int getAckThrottle() {
 		return ackThrottle;
@@ -1129,7 +1129,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * @param ackThrottle
 	 *          the value used to throttle
 	 * @see #isAckRequired()
-	 * @see #ackReceived(long)
+	 * @see #awaitAck()
 	 */
 	public void setAckThrottle(int ackThrottle) {
 		this.ackThrottle = ackThrottle;
