@@ -31,8 +31,8 @@ import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHan
 
 /**
  * The Interface Streamer defines the methods to stream data to a remote socket
- * in chunks. The default size for chunks is 1024 bytes. Three modes of
- * streaming are supported: {@link #fullThrottle()} (default),
+ * in chunks. The default size for chunks is {@value #DEFAULT_CHUNK_SIZE} bytes.
+ * Three modes of streaming are supported: {@link #fullThrottle()} (default),
  * {@link #ackRequired()} and {@link #setChunksPerSecond(int)}.
  * {@link #setConcurrentThreads(int)} will set the number of concurrent chunks
  * being sent at any one time.

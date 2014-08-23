@@ -18,17 +18,16 @@
  */
 package com.github.mrstampy.kitchensync.stream.header;
 
-import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
- * The Interface ChunkProcessor is used by {@link Streamer} to process a
- * chunk prior to sending ie. add a header, encrypt etc. Implementations are
- * invoked when {@link Streamer#isProcessChunk()}, immediately after the latest
- * chunk of the message has been acquired.<br>
+ * The Interface ChunkProcessor is used by {@link Streamer} to process a chunk
+ * prior to sending ie. add a header, encrypt etc. Implementations are invoked
+ * when {@link Streamer#isProcessChunk()}, immediately after the latest chunk of
+ * the message has been acquired.<br>
  * <br>
  * 
- * @see AbstractStreamer#setChunkProcessor(ChunkProcessor)
+ * @see Streamer#setChunkProcessor(ChunkProcessor)
  */
 public interface ChunkProcessor {
 
@@ -56,7 +55,7 @@ public interface ChunkProcessor {
 	byte[] process(Streamer<?> streamer, byte[] chunk);
 
 	/**
-	 * Reset the state of the ChunkProcessor, called on {@link AbstractStreamer}
+	 * Reset the state of the ChunkProcessor, called on {@link Streamer}
 	 * initialization.
 	 */
 	void reset();

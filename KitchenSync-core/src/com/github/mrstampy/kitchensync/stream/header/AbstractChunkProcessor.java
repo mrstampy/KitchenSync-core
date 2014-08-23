@@ -43,13 +43,14 @@ public abstract class AbstractChunkProcessor implements ChunkProcessor {
 	}
 
 	/**
-	 * Implement to add just the header detail to the supplied {@link ByteBuf}.
+	 * Implement to return a {@link ByteBuf} containing the processed message.
 	 *
 	 * @param streamer
 	 *          the streamer
 	 * @param message
 	 *          the message
 	 * @return the ByteBuf populated with the transformed message.
+	 * @see #createByteBuf(int)
 	 */
 	protected abstract ByteBuf processImpl(Streamer<?> streamer, byte[] message);
 

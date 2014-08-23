@@ -24,7 +24,7 @@ import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
- * Prepends the sequence to the header. This is the default
+ * Prepends the sequence header to the message. This is the default
  * {@link ChunkProcessor} when {@link Streamer#isProcessChunk()}.
  * 
  * @see SequenceHeader
@@ -49,11 +49,11 @@ public class SequenceHeaderPrepender extends AbstractChunkProcessor {
 	@Override
 	protected ByteBuf processImpl(Streamer<?> streamer, byte[] message) {
 		ByteBuf buf = createByteBuf(sizeInBytes() + message.length);
-		
+
 		buf.writeBytes(SequenceHeader.SEQUENCE_HEADER_BYTES);
 		buf.writeLong(streamer.getSequence());
 		buf.writeBytes(message);
-		
+
 		return buf;
 	}
 
