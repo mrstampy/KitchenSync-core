@@ -32,8 +32,7 @@ public abstract class AbstractChunkProcessor implements ChunkProcessor {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * com.github.mrstampy.kitchensync.stream.header.ChunkProcessor#process
+	 * @see com.github.mrstampy.kitchensync.stream.header.ChunkProcessor#process
 	 * (com.github.mrstampy.kitchensync.stream.Streamer, byte[])
 	 */
 	@Override
@@ -48,8 +47,9 @@ public abstract class AbstractChunkProcessor implements ChunkProcessor {
 	 *
 	 * @param streamer
 	 *          the streamer
-	 * @param buf
-	 *          the buf
+	 * @param message
+	 *          the message
+	 * @return the ByteBuf populated with the transformed message.
 	 */
 	protected abstract ByteBuf processImpl(Streamer<?> streamer, byte[] message);
 
@@ -57,6 +57,7 @@ public abstract class AbstractChunkProcessor implements ChunkProcessor {
 	 * Convenience method to return a ByteBuf initialized to the specified size.
 	 * 
 	 * @param size
+	 *          of the ByteBuf
 	 * @return ByteBuf of size 'size'
 	 */
 	protected ByteBuf createByteBuf(int size) {

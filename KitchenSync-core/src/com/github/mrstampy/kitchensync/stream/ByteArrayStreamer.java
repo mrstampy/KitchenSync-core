@@ -95,9 +95,13 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 * The Constructor.
 	 * 
 	 * @param channel
+	 *          the channel
 	 * @param destination
+	 *          the destination
 	 * @param pipeSize
+	 *          the pipeSize
 	 * @throws Exception
+	 *           the exception
 	 */
 	public ByteArrayStreamer(KiSyChannel channel, InetSocketAddress destination, int pipeSize) throws Exception {
 		init(channel, destination, pipeSize);
@@ -107,9 +111,13 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 * Exposed to facilitate reuse.
 	 * 
 	 * @param channel
+	 *          the channel
 	 * @param destination
+	 *          the destination
 	 * @param pipeSize
+	 *          the pipeSize
 	 * @throws Exception
+	 *           the exception
 	 */
 	public void init(KiSyChannel channel, InetSocketAddress destination, int pipeSize) throws Exception {
 		this.pipeSize = pipeSize;
@@ -130,7 +138,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 */
 	public void init(KiSyChannel channel, InetSocketAddress destination) throws Exception {
 		log.debug("Initializing streamer from {} to {}", channel.localAddress(), destination);
-		
+
 		this.channel = channel;
 		this.destination = destination;
 
@@ -334,8 +342,9 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	/**
 	 * Returns the size of the pipe used to move bytes around.
 	 * 
-	 * @return
+	 * @return the size of the pipe
 	 * @see #PIPE_SIZE
+	 * @see #init(KiSyChannel, InetSocketAddress, int)
 	 */
 	public int getPipeSize() {
 		return pipeSize;
@@ -347,7 +356,9 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 * {@link #awaitFlush()} method is recursively called. Defaults to 10 seconds.
 	 * 
 	 * @param waitTime
+	 *          the value to wait
 	 * @param waitUnits
+	 *          the units to wait
 	 */
 	public void setWaitTime(int waitTime, TimeUnit waitUnits) {
 		if (waitTime < 0) throw new IllegalArgumentException("wait time must be >= 0: " + waitTime);

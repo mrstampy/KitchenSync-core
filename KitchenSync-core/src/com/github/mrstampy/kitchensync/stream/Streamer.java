@@ -334,7 +334,8 @@ public interface Streamer<MSG> {
 	 * acquired. {@link NoProcessChunkProcessor} is provided for convenience when
 	 * this value is false.
 	 * 
-	 * @return
+	 * @return true if {@link #getChunkProcessor()} is invoked for each chunk
+	 *         acquired.
 	 */
 	boolean isProcessChunk();
 
@@ -342,13 +343,15 @@ public interface Streamer<MSG> {
 	 * Set to true to use {@link #getChunkProcessor()} to process each chunk.
 	 * 
 	 * @param processChunk
+	 *          true if {@link #getChunkProcessor()} is invoked for each chunk
+	 *          acquired.
 	 */
 	void setProcessChunk(boolean processChunk);
 
 	/**
 	 * Returns the {@link ChunkProcessor} used when {@link #isProcessChunk()}.
 	 * 
-	 * @return
+	 * @return the {@link ChunkProcessor} used if {@link #isProcessChunk()}.
 	 */
 	ChunkProcessor getChunkProcessor();
 
@@ -356,6 +359,7 @@ public interface Streamer<MSG> {
 	 * Sets the {@link ChunkProcessor} used when {@link #isProcessChunk()}.
 	 * 
 	 * @param chunkProcessor
+	 *          to use if {@link #isProcessChunk()}.
 	 */
 	void setChunkProcessor(ChunkProcessor chunkProcessor);
 
@@ -364,7 +368,6 @@ public interface Streamer<MSG> {
 	 * streaming. Defaults to false.
 	 *
 	 * @return true, if checks if is eom on finish
-	 * @see #sendEndOfMessage()
 	 * @see #getFooter()
 	 */
 	boolean isEomOnFinish();
@@ -374,7 +377,6 @@ public interface Streamer<MSG> {
 	 *
 	 * @param eomOnFinish
 	 *          the eom on finish
-	 * @see #sendEndOfMessage()
 	 * @see #getFooter()
 	 */
 	void setEomOnFinish(boolean eomOnFinish);
@@ -382,8 +384,7 @@ public interface Streamer<MSG> {
 	/**
 	 * Returns the {@link Footer} used when {@link #isEomOnFinish()}.
 	 * 
-	 * @return
-	 * @see #sendEndOfMessage()
+	 * @return the {@link Footer} to use when {@link #isEomOnFinish()}.
 	 */
 	Footer getFooter();
 
@@ -391,7 +392,7 @@ public interface Streamer<MSG> {
 	 * Sets the {@link Footer} to use when {@link #isEomOnFinish()}.
 	 * 
 	 * @param footer
-	 * @see #sendEndOfMessage()
+	 *          used when {@link #isEomOnFinish()}.
 	 */
 	void setFooter(Footer footer);
 

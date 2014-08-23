@@ -993,45 +993,40 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		this.ackAwaitUnit = unit;
 	}
 
-	/**
-	 * If true then an end of message message will be sent upon completion of
-	 * streaming. Defaults to false.
-	 *
-	 * @return true, if checks if is eom on finish
-	 * @see #sendEndOfMessage()
-	 * @see #getFooter()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#isEomOnFinish()
 	 */
 	public boolean isEomOnFinish() {
 		return eomOnFinish;
 	}
 
-	/**
-	 * Set to true to send an end of message message upon completion of streaming.
-	 *
-	 * @param eomOnFinish
-	 *          the eom on finish
-	 * @see #sendEndOfMessage()
-	 * @see #getFooter()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.stream.Streamer#setEomOnFinish(boolean)
 	 */
 	public void setEomOnFinish(boolean eomOnFinish) {
 		this.eomOnFinish = eomOnFinish;
 	}
 
-	/**
-	 * Returns the {@link Footer} used when {@link #isEomOnFinish()}.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @return
-	 * @see #sendEndOfMessage()
+	 * @see com.github.mrstampy.kitchensync.stream.Streamer#getFooter()
 	 */
 	public Footer getFooter() {
 		return footer;
 	}
 
-	/**
-	 * Sets the {@link Footer} to use when {@link #isEomOnFinish()}.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param footer
-	 * @see #sendEndOfMessage()
+	 * @see
+	 * com.github.mrstampy.kitchensync.stream.Streamer#setFooter(com.github.mrstampy
+	 * .kitchensync.stream.footer.Footer)
 	 */
 	public void setFooter(Footer footer) {
 		this.footer = footer;
