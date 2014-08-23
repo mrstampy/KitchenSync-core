@@ -170,6 +170,7 @@ public class StreamerTester {
 				channel2.localAddress());
 
 		biss.setEomOnFinish(true);
+		biss.setInputStreamResettable(true);
 
 		return biss;
 	}
