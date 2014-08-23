@@ -49,8 +49,17 @@
 <a name="quickstart" class="anchor" href="#quickstart"><span class="octicon octicon-link"></span></a>Quickstart</h1>
 
 <ul>
-<li>Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.2.3"/&gt;</li>
+<li>Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3"/&gt;</li>
 <li><a href="https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test">Example code</a></li>
+</ul><h1>
+<a name="release-23---august-23-2014" class="anchor" href="#release-23---august-23-2014"><span class="octicon octicon-link"></span></a>Release 2.3 - August 23, 2014</h1>
+
+<ul>
+<li>Removed explicit header reference from Streamer interface</li>
+<li>Added <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/header/ChunkProcessor.java">ChunkProcessor</a> and <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/footer/Footer.java">Footer</a> for transforming chunks and sending end of message messages, respectively</li>
+<li>Added a throttle for full throttle and acknowledgement messages to slow down throughput.</li>
+<li>Improvements to <a href="https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/ByteArrayStreamer.java">ByteArrayStreamer</a>.</li>
+<li>Upgraded Netty to version 4.0.23.Final</li>
 </ul><h1>
 <a name="release-223---august-17-2014" class="anchor" href="#release-223---august-17-2014"><span class="octicon octicon-link"></span></a>Release 2.2.3 - August 17, 2014</h1>
 
