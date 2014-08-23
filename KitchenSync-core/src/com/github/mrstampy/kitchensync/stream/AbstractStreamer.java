@@ -134,6 +134,8 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private Footer footer = new EndOfMessageFooter();
 
+	private int ackThrottle = 0;
+
 	/**
 	 * The Constructor.
 	 *
@@ -609,7 +611,23 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 * and wait or a resend of the last message.
 	 */
 	protected void awaitAck() {
-		if (await(latch, ackAwait, ackAwaitUnit)) {
+		final boolean ok = await(latch, ackAwait, ackAwaitUnit);
+
+		if (getAckThrottle() > 0) {
+			svc.createWorker().schedule(new Action0() {
+
+				@Override
+				public void call() {
+					nextAckChunk(ok);
+				}
+			}, getAckThrottle(), TimeUnit.MICROSECONDS);
+		} else {
+			nextAckChunk(ok);
+		}
+	}
+
+	private void nextAckChunk(final boolean ok) {
+		if (ok) {
 			sendAndAwaitAck();
 		} else {
 			log.warn("No ack received for last packet, resending");
@@ -1089,6 +1107,32 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		if (getFooter() == null) return;
 
 		getFooter().reset();
+	}
+
+	/**
+	 * Returns the microseconds to wait between receiving an acknowledgement and
+	 * sending the next chunk. Values &le; 0 indicate no throttling. Default of
+	 * zero.
+	 * 
+	 * @return the value used to throttle
+	 * @see #isAckRequired()
+	 * @see #ackReceived(long)
+	 */
+	public int getAckThrottle() {
+		return ackThrottle;
+	}
+
+	/**
+	 * Sets the microseconds to wait between receiving an acknowledgement and
+	 * sending the next chunk. Values &le; 0 indicate no throttling.
+	 * 
+	 * @param ackThrottle
+	 *          the value used to throttle
+	 * @see #isAckRequired()
+	 * @see #ackReceived(long)
+	 */
+	public void setAckThrottle(int ackThrottle) {
+		this.ackThrottle = ackThrottle;
 	}
 
 }
