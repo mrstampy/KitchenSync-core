@@ -134,7 +134,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	private Footer footer = new EndOfMessageFooter();
 
-	private int ackThrottle = 0;
+	private int throttle = 0;
 
 	/**
 	 * The Constructor.
@@ -485,15 +485,30 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	 */
 	protected void fullThrottleService() {
 		unsubscribe();
-		sub = svc.createWorker().schedule(new Action0() {
+		if (getThrottle() > 0) {
+			sub = svc.createWorker().schedulePeriodically(new Action0() {
 
-			@Override
-			public void call() {
-				while (isStreaming()) {
-					fullThrottleServiceImpl();
+				@Override
+				public void call() {
+					if (isStreaming()) {
+						fullThrottleServiceImpl();
+					} else {
+						sub.unsubscribe();
+					}
 				}
-			}
-		});
+			}, 0, getThrottle(), TimeUnit.MICROSECONDS);
+
+		} else {
+			sub = svc.createWorker().schedule(new Action0() {
+
+				@Override
+				public void call() {
+					while (isStreaming()) {
+						fullThrottleServiceImpl();
+					}
+				}
+			});
+		}
 	}
 
 	private void fullThrottleServiceImpl() {
@@ -613,14 +628,14 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	protected void awaitAck() {
 		final boolean ok = await(latch, ackAwait, ackAwaitUnit);
 
-		if (getAckThrottle() > 0) {
+		if (getThrottle() > 0) {
 			svc.createWorker().schedule(new Action0() {
 
 				@Override
 				public void call() {
 					nextAckChunk(ok);
 				}
-			}, getAckThrottle(), TimeUnit.MICROSECONDS);
+			}, getThrottle(), TimeUnit.MICROSECONDS);
 		} else {
 			nextAckChunk(ok);
 		}
@@ -1111,28 +1126,35 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 	/**
 	 * Returns the microseconds to wait between receiving an acknowledgement and
-	 * sending the next chunk. Values &le; 0 indicate no throttling. Default of
+	 * sending the next chunk, or between sending chunks when at
+	 * {@link #fullThrottle()}. Values &le; 0 indicate no throttling. Default of
 	 * zero.
 	 * 
 	 * @return the value used to throttle
 	 * @see #isAckRequired()
 	 * @see #awaitAck()
 	 */
-	public int getAckThrottle() {
-		return ackThrottle;
+	public int getThrottle() {
+		return throttle;
 	}
 
 	/**
 	 * Sets the microseconds to wait between receiving an acknowledgement and
-	 * sending the next chunk. Values &le; 0 indicate no throttling.
+	 * sending the next chunk, or between sending chunks when at
+	 * {@link #fullThrottle()}. Values &le; 0 indicate no throttling. Setting
+	 * while streaming at full throttle has no effect.
 	 * 
-	 * @param ackThrottle
+	 * @param throttle
 	 *          the value used to throttle
 	 * @see #isAckRequired()
 	 * @see #awaitAck()
 	 */
-	public void setAckThrottle(int ackThrottle) {
-		this.ackThrottle = ackThrottle;
+	public void setThrottle(int throttle) {
+		if (isStreaming() && isFullThrottle()) {
+			log.warn("Setting the throttle while streaming at full throttle has no effect");
+		}
+
+		this.throttle = throttle;
 	}
 
 }
