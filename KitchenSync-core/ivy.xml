@@ -35,7 +35,7 @@
 		<dependency org="ch.qos.logback" name="logback-classic" rev="1.1.2" transitive="false" />
 		<dependency org="ch.qos.logback" name="logback-core" rev="1.1.2" transitive="false" />
 		
-		<dependency org="io.netty" name="netty-all" rev="4.0.21.Final" transitive="false"/>
+		<dependency org="io.netty" name="netty-all" rev="4.0.23.Final" transitive="false"/>
 		<dependency org="org.javassist" name="javassist" rev="3.18.2-GA"/>
 		
 		<dependency org="com.netflix.rxjava" name="rxjava-core" rev="0.19.6"/>
