@@ -71,7 +71,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	private int pipeSize = PIPE_SIZE;
 	private int halfPipeSize = pipeSize / 2;
 
-	private int waitTime = 10;;
+	private int waitTime = 10;
 	private TimeUnit waitUnits = TimeUnit.SECONDS;
 
 	private KiSyChannel channel;
