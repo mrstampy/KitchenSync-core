@@ -18,6 +18,8 @@
  */
 package com.github.mrstampy.kitchensync.stream.footer;
 
+import java.util.Arrays;
+
 import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
@@ -32,6 +34,9 @@ public class EndOfMessageFooter implements Footer {
 
 	/** The Constant END_OF_MESSAGE. */
 	public static final String END_OF_MESSAGE = "EOM:";
+
+	private static final byte[] END_OF_MESSAGE_BYTES = END_OF_MESSAGE.getBytes();
+	private static final int LENGTH = END_OF_MESSAGE_BYTES.length;
 
 	/*
 	 * (non-Javadoc)
@@ -50,6 +55,20 @@ public class EndOfMessageFooter implements Footer {
 	 */
 	@Override
 	public void reset() {
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.footer.Footer#isFooter(byte[])
+	 */
+	@Override
+	public boolean isFooter(byte[] message) {
+		if (message == null || message.length < LENGTH) return false;
+
+		byte[] b = Arrays.copyOfRange(message, 0, LENGTH);
+
+		return Arrays.equals(b, END_OF_MESSAGE_BYTES);
 	}
 
 }

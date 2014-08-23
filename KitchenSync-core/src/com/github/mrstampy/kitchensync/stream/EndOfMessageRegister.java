@@ -20,7 +20,6 @@ package com.github.mrstampy.kitchensync.stream;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -31,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 import com.github.mrstampy.kitchensync.stream.footer.EndOfMessageFooter;
+import com.github.mrstampy.kitchensync.stream.footer.Footer;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 
 /**
@@ -38,14 +38,22 @@ import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessage
  * 
  * @see EndOfMessageListener
  * @see EndOfMessageInboundMessageHandler
+ * @see Footer
  */
 public class EndOfMessageRegister {
 	private static final Logger log = LoggerFactory.getLogger(EndOfMessageRegister.class);
 
-	private static List<EndOfMessageListener> eomListeners = new ArrayList<EndOfMessageListener>();
-	private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-	private static ReadLock readLock = lock.readLock();
-	private static WriteLock writeLock = lock.writeLock();
+	/**
+	 * The Constant INSTANCE, convenience singleton.
+	 */
+	public static final EndOfMessageRegister INSTANCE = new EndOfMessageRegister();
+
+	private List<EndOfMessageListener> eomListeners = new ArrayList<EndOfMessageListener>();
+	private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+	private ReadLock readLock = lock.readLock();
+	private WriteLock writeLock = lock.writeLock();
+
+	private Footer footer = new EndOfMessageFooter();
 
 	/**
 	 * Adds the eom listeners.
@@ -53,7 +61,7 @@ public class EndOfMessageRegister {
 	 * @param listeners
 	 *          the listeners
 	 */
-	public static void addEOMListeners(EndOfMessageListener... listeners) {
+	public void addEOMListeners(EndOfMessageListener... listeners) {
 		if (listeners == null || listeners.length == 0) return;
 
 		writeLock.lock();
@@ -72,7 +80,7 @@ public class EndOfMessageRegister {
 	 * @param listeners
 	 *          the listeners
 	 */
-	public static void removeEOMListeners(EndOfMessageListener... listeners) {
+	public void removeEOMListeners(EndOfMessageListener... listeners) {
 		if (listeners == null || listeners.length == 0) return;
 
 		writeLock.lock();
@@ -86,21 +94,24 @@ public class EndOfMessageRegister {
 	}
 
 	/**
-	 * Notify eom listeners.
+	 * Notify eom listeners. Assumes that {@link #isEndOfMessage(byte[])} has been
+	 * used appropriately.
 	 *
 	 * @param channel
 	 *          the channel
 	 * @param sender
 	 *          the sender
+	 * @param eom
+	 *          the end of message message
 	 */
-	public static void notifyEOMListeners(KiSyChannel channel, InetSocketAddress sender) {
+	public void notifyEOMListeners(KiSyChannel channel, InetSocketAddress sender, byte[] eom) {
 		readLock.lock();
 		try {
 			boolean notified = false;
 			for (EndOfMessageListener l : eomListeners) {
 				if (!l.isForChannelAndSender(channel, sender)) continue;
 
-				l.endOfMessage();
+				l.endOfMessage(eom);
 				notified = true;
 			}
 
@@ -118,17 +129,27 @@ public class EndOfMessageRegister {
 	 * @return true, if checks if is end of message
 	 * @see EndOfMessageInboundMessageHandler
 	 */
-	public static boolean isEndOfMessage(byte[] message) {
-		byte[] endOfMessage = EndOfMessageFooter.END_OF_MESSAGE.getBytes();
-		int length = endOfMessage.length;
-
-		if (message == null || message.length < length) return false;
-
-		byte[] b = Arrays.copyOfRange(message, 0, length);
-
-		return Arrays.equals(b, endOfMessage);
+	public boolean isEndOfMessage(byte[] message) {
+		return getFooter().isFooter(message);
 	}
 
-	private EndOfMessageRegister() {
+	/**
+	 * Gets the footer used to determine if {@link #isEndOfMessage(byte[])}. The
+	 * default is a {@link EndOfMessageFooter}.
+	 *
+	 * @return the footer
+	 */
+	public Footer getFooter() {
+		return footer;
+	}
+
+	/**
+	 * Sets the footer used to determine if {@link #isEndOfMessage(byte[])}.
+	 *
+	 * @param footer
+	 *          the footer
+	 */
+	public void setFooter(Footer footer) {
+		this.footer = footer;
 	}
 }

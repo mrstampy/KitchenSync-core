@@ -49,6 +49,9 @@ public interface EndOfMessageListener {
 	 * Invoked by the {@link EndOfMessageRegister} when
 	 * {@link #isForChannelAndSender(KiSyChannel, InetSocketAddress)} returns
 	 * true.
+	 * 
+	 * @param eom
+	 *          the end of message message
 	 */
-	void endOfMessage();
+	void endOfMessage(byte[] eom);
 }

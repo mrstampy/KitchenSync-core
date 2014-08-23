@@ -18,15 +18,12 @@
  */
 package com.github.mrstampy.kitchensync.stream.inbound;
 
-import static com.github.mrstampy.kitchensync.stream.EndOfMessageRegister.isEndOfMessage;
-import static com.github.mrstampy.kitchensync.stream.EndOfMessageRegister.notifyEOMListeners;
-
 import java.net.InetSocketAddress;
 
 import com.github.mrstampy.kitchensync.message.inbound.AbstractInboundKiSyHandler;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
+import com.github.mrstampy.kitchensync.stream.EndOfMessageRegister;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class EndOfMessageInboundMessageHandler.
  */
@@ -34,28 +31,42 @@ public class EndOfMessageInboundMessageHandler extends AbstractInboundKiSyHandle
 
 	private static final long serialVersionUID = -2312727898381854486L;
 
-	/* (non-Javadoc)
-	 * @see com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler#canHandleMessage(java.lang.Object)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler
+	 * #canHandleMessage(java.lang.Object)
 	 */
 	@Override
 	public boolean canHandleMessage(byte[] message) {
-		return isEndOfMessage(message);
+		return EndOfMessageRegister.INSTANCE.isEndOfMessage(message);
 	}
 
-	/* (non-Javadoc)
-	 * @see com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler#getExecutionOrder()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.message.inbound.KiSyInboundMesssageHandler
+	 * #getExecutionOrder()
 	 */
 	@Override
 	public int getExecutionOrder() {
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.github.mrstampy.kitchensync.message.inbound.AbstractInboundKiSyHandler#onReceive(java.lang.Object, com.github.mrstampy.kitchensync.netty.channel.KiSyChannel, java.net.InetSocketAddress)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * com.github.mrstampy.kitchensync.message.inbound.AbstractInboundKiSyHandler
+	 * #onReceive(java.lang.Object,
+	 * com.github.mrstampy.kitchensync.netty.channel.KiSyChannel,
+	 * java.net.InetSocketAddress)
 	 */
 	@Override
 	protected void onReceive(byte[] message, KiSyChannel channel, InetSocketAddress sender) throws Exception {
-		notifyEOMListeners(channel, sender);
+		EndOfMessageRegister.INSTANCE.notifyEOMListeners(channel, sender, message);
 	}
 
 }

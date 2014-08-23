@@ -87,7 +87,7 @@ public class StreamerTester {
 	private void init() {
 		initInboundManager();
 
-		EndOfMessageRegister.addEOMListeners(new EndOfMessageListener() {
+		EndOfMessageRegister.INSTANCE.addEOMListeners(new EndOfMessageListener() {
 
 			@Override
 			public boolean isForChannelAndSender(KiSyChannel channel, InetSocketAddress sender) {
@@ -95,7 +95,7 @@ public class StreamerTester {
 			}
 
 			@Override
-			public void endOfMessage() {
+			public void endOfMessage(byte[] eom) {
 				log.info("End of Message received");
 			}
 		});
@@ -188,7 +188,7 @@ public class StreamerTester {
 
 			@Override
 			public boolean canHandleMessage(byte[] message) {
-				return !StreamerAckRegister.isAckMessage(message) && !EndOfMessageRegister.isEndOfMessage(message);
+				return !StreamerAckRegister.isAckMessage(message) && !EndOfMessageRegister.INSTANCE.isEndOfMessage(message);
 			}
 
 			@Override

@@ -52,7 +52,7 @@ import com.github.mrstampy.kitchensync.util.KiSyUtils;
  * The Class StreamerTester streams any number of largish files (several megs
  * per file, avoid gigabyte files unless you've the memory to handle it and have
  * started this class with the appropriate memory allocation) using 2 concurrent
- * threads at a rate of 10 chunks / second to fully exercise the
+ * threads at a rate of 100 chunks / second to fully exercise the
  * {@link ByteArrayStreamer}.
  * 
  * @see StreamerAckRegister
@@ -88,7 +88,7 @@ public class ByteArrayStreamerTester {
 	private void init() {
 		initInboundManager();
 
-		EndOfMessageRegister.addEOMListeners(new EndOfMessageListener() {
+		EndOfMessageRegister.INSTANCE.addEOMListeners(new EndOfMessageListener() {
 
 			@Override
 			public boolean isForChannelAndSender(KiSyChannel channel, InetSocketAddress sender) {
@@ -96,7 +96,7 @@ public class ByteArrayStreamerTester {
 			}
 
 			@Override
-			public void endOfMessage() {
+			public void endOfMessage(byte[] eom) {
 				log.info("End of Message received");
 			}
 		});
@@ -192,7 +192,7 @@ public class ByteArrayStreamerTester {
 
 			@Override
 			public boolean canHandleMessage(byte[] message) {
-				return !StreamerAckRegister.isAckMessage(message) && !EndOfMessageRegister.isEndOfMessage(message);
+				return !StreamerAckRegister.isAckMessage(message) && !EndOfMessageRegister.INSTANCE.isEndOfMessage(message);
 			}
 
 			@Override

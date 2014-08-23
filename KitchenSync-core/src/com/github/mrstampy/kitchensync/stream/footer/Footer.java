@@ -29,6 +29,15 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
 public interface Footer {
 
 	/**
+	 * Return true if the message has been created from {@link #createFooter()}.
+	 * 
+	 * @param message
+	 *          to check if created by {@link #createFooter()}
+	 * @return true if the message was created by {@link #createFooter()}
+	 */
+	boolean isFooter(byte[] message);
+
+	/**
 	 * Creates the footer.
 	 *
 	 * @return the byte[]
