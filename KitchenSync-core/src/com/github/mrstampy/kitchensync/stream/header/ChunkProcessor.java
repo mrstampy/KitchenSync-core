@@ -22,7 +22,7 @@ import com.github.mrstampy.kitchensync.stream.AbstractStreamer;
 import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
- * The Interface ChunkProcessor is used by {@link AbstractStreamer} to process a
+ * The Interface ChunkProcessor is used by {@link Streamer} to process a
  * chunk prior to sending ie. add a header, encrypt etc. Implementations are
  * invoked when {@link Streamer#isProcessChunk()}, immediately after the latest
  * chunk of the message has been acquired.<br>

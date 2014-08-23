@@ -23,8 +23,8 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
 
 /**
  * The Class NoProcessChunkProcessor is a blank implementation of a
- * {@link ChunkProcessor}, used by {@link AbstractStreamer} when headers are not
- * required.
+ * {@link ChunkProcessor}, used by {@link AbstractStreamer} when chunk
+ * processing is not required.
  * 
  * @see Streamer#isProcessChunk()
  */

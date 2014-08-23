@@ -45,7 +45,7 @@ public class EndOfMessageFooter implements Footer {
 	 */
 	@Override
 	public byte[] createFooter() {
-		return END_OF_MESSAGE.getBytes();
+		return END_OF_MESSAGE_BYTES;
 	}
 
 	/*
