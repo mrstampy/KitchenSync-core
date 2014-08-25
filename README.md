@@ -4,8 +4,12 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3.1"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3.2"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
+
+# Release 2.3.2 - August 25, 2014
+
+* Exposed throttling in [ByteArrayStreamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/ByteArrayStreamer.java).
 
 # Release 2.3.1 - August 23, 2014
 
