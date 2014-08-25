@@ -325,6 +325,27 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	}
 
 	/**
+	 * Exposing throttling
+	 * 
+	 * @return the microseconds to throttle between chunks
+	 * @see AbstractStreamer#getThrottle()
+	 */
+	public int getThrottle() {
+		return getStreamer().getThrottle();
+	}
+
+	/**
+	 * Exposing throttling
+	 * 
+	 * @param throttle
+	 *          the microseconds to throttle between chunks
+	 * @see AbstractStreamer#setThrottle(int)
+	 */
+	public void setThrottle(int throttle) {
+		getStreamer().setThrottle(throttle);
+	}
+
+	/**
 	 * Send end of message.
 	 * 
 	 * @see EndOfMessageRegister
