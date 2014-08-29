@@ -43,6 +43,7 @@ import rx.schedulers.Schedulers;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
+import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
  * Encapsulates a {@link BufferedInputStreamStreamer} and uses an encapsulated
@@ -64,9 +65,10 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	private AtomicBoolean cancelled = new AtomicBoolean(false);
 	private AtomicBoolean eom = new AtomicBoolean(false);
 
-	private Scheduler svc = Schedulers.from(Executors.newSingleThreadExecutor());
+	private Scheduler svc = Schedulers.from(Executors.newCachedThreadPool());
 
 	private CountDownLatch latch;
+	private CountDownLatch eomLatch;
 
 	private int pipeSize = PIPE_SIZE;
 	private int halfPipeSize = pipeSize / 2;
@@ -188,12 +190,15 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 			log.warn("Null message ignored");
 			sf.finished(false);
 		} else {
+			if(isEomOnFinish()) eomLatch = new CountDownLatch(1);
+			
 			svc.createWorker().schedule(new Action0() {
 
 				@Override
 				public void call() {
 					try {
 						sendMessage(message);
+						if(isEomOnFinish()) KiSyUtils.await(eomLatch, 10, TimeUnit.MILLISECONDS);
 						sf.finished(!cancelled.get());
 					} catch (IOException e) {
 						sf.finished(false, e);
@@ -231,9 +236,31 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 
 				writeAndFlush(Arrays.copyOfRange(message, from, to));
 			}
+			if (isEomOnFinish()) sendEomOnFinish();
 		} finally {
 			latch.countDown();
 		}
+
+	}
+
+	private void sendEomOnFinish() {
+		svc.createWorker().schedule(new Action0() {
+
+			@Override
+			public void call() {
+				try {
+					int available = inputStream.available();
+					while (available > 0) {
+						KiSyUtils.snooze(1);
+						available = inputStream.available();
+					}
+					sendEndOfMessage();
+					eomLatch.countDown();
+				} catch (IOException e) {
+					log.error("Unexpected exception", e);
+				}
+			}
+		});
 	}
 
 	private int getTo(int messageLength, int from) {
