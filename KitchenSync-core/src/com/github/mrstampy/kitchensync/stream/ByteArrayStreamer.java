@@ -255,9 +255,10 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 						available = inputStream.available();
 					}
 					sendEndOfMessage();
-					eomLatch.countDown();
 				} catch (IOException e) {
 					log.error("Unexpected exception", e);
+				} finally {
+					eomLatch.countDown();
 				}
 			}
 		});
