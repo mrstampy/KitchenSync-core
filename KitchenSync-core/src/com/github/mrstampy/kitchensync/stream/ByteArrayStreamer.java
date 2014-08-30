@@ -18,7 +18,6 @@
  */
 package com.github.mrstampy.kitchensync.stream;
 
-import static com.github.mrstampy.kitchensync.util.KiSyUtils.await;
 import io.netty.channel.ChannelFuture;
 
 import java.io.BufferedInputStream;
@@ -28,7 +27,6 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,6 +42,7 @@ import rx.schedulers.Schedulers;
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
+import com.github.mrstampy.kitchensync.util.ResettingLatch;
 
 /**
  * Encapsulates a {@link BufferedInputStreamStreamer} and uses an encapsulated
@@ -67,8 +66,9 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 
 	private Scheduler svc = Schedulers.from(Executors.newCachedThreadPool());
 
-	private CountDownLatch latch;
-	private CountDownLatch eomLatch;
+	private ResettingLatch latch = new ResettingLatch();
+	private ResettingLatch eomLatch = new ResettingLatch();
+	private ResettingLatch flushLatch = new ResettingLatch();
 
 	private int pipeSize = PIPE_SIZE;
 	private int halfPipeSize = pipeSize / 2;
@@ -190,15 +190,14 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 			log.warn("Null message ignored");
 			sf.finished(false);
 		} else {
-			if(isEomOnFinish()) eomLatch = new CountDownLatch(1);
-			
+
 			svc.createWorker().schedule(new Action0() {
 
 				@Override
 				public void call() {
 					try {
 						sendMessage(message);
-						if(isEomOnFinish()) KiSyUtils.await(eomLatch, 10, TimeUnit.MILLISECONDS);
+						if (isEomOnFinish()) eomLatch.await(10, TimeUnit.MILLISECONDS);
 						sf.finished(!cancelled.get());
 					} catch (IOException e) {
 						sf.finished(false, e);
@@ -226,7 +225,6 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 */
 	protected void sendMessage(byte[] message) throws IOException {
 		int messageLength = message.length;
-		latch = new CountDownLatch(1);
 
 		try {
 			for (int from = 0; from < messageLength; from += halfPipeSize) {
@@ -296,9 +294,8 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 *           the IO exception
 	 */
 	protected void awaitFlush() throws IOException {
-		CountDownLatch cdl = new CountDownLatch(1);
-		Subscription sub = startAwaitThread(cdl);
-		boolean ok = await(cdl, waitTime, waitUnits);
+		Subscription sub = startAwaitThread();
+		boolean ok = flushLatch.await(waitTime, waitUnits);
 		sub.unsubscribe();
 
 		if (!ok && !cancelled.get()) {
@@ -315,7 +312,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 *          the cdl
 	 * @return the subscription
 	 */
-	protected Subscription startAwaitThread(final CountDownLatch cdl) {
+	protected Subscription startAwaitThread() {
 		return Schedulers.computation().createWorker().schedulePeriodically(new Action0() {
 
 			@Override
@@ -326,7 +323,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 					log.error("Unexpected exception", e);
 				}
 
-				cdl.countDown();
+				flushLatch.countDown();
 			}
 		}, 0, 5, TimeUnit.MILLISECONDS);
 	}
@@ -381,7 +378,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 * @see EndOfMessageInboundMessageHandler
 	 */
 	public void sendEndOfMessage() {
-		await(latch, 100, TimeUnit.MILLISECONDS);
+		latch.await(100, TimeUnit.MILLISECONDS);
 
 		getStreamer().sendEndOfMessage();
 
