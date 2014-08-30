@@ -37,9 +37,11 @@ public interface ChunkProcessor {
 	 * {@link Streamer#getChunkSize()} when determining the size of chunk to
 	 * obtain.
 	 *
+	 * @param the
+	 *          streamer, should header size be dependent upon state
 	 * @return the size
 	 */
-	int sizeInBytes();
+	int sizeInBytes(Streamer<?> streamer);
 
 	/**
 	 * Process the message. The {@link Streamer} is provided for any required

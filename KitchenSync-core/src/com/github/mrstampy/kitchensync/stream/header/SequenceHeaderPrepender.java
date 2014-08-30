@@ -38,7 +38,7 @@ public class SequenceHeaderPrepender extends AbstractChunkProcessor {
 	 * com.github.mrstampy.kitchensync.stream.header.ChunkProcesor#sizeInBytes()
 	 */
 	@Override
-	public int sizeInBytes() {
+	public int sizeInBytes(Streamer<?> streamer) {
 		return SequenceHeader.HEADER_LENGTH;
 	}
 
@@ -47,7 +47,7 @@ public class SequenceHeaderPrepender extends AbstractChunkProcessor {
 	 */
 	@Override
 	protected ByteBuf processImpl(Streamer<?> streamer, byte[] message) {
-		ByteBuf buf = createByteBuf(sizeInBytes() + message.length);
+		ByteBuf buf = createByteBuf(sizeInBytes(streamer) + message.length);
 
 		buf.writeBytes(SequenceHeader.SEQUENCE_HEADER_BYTES);
 		buf.writeLong(streamer.getSequence());

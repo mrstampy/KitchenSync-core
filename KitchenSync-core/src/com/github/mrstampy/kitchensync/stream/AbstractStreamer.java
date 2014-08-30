@@ -777,7 +777,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 
 		if (isFullThrottle()) cf.addListener(streamerListener);
 
-		sent.addAndGet(chunk.length - getEffectiveChunkProcessor().sizeInBytes());
+		sent.addAndGet(chunk.length - getEffectiveChunkProcessor().sizeInBytes(this));
 	}
 
 	/**
@@ -980,7 +980,7 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 	}
 
 	private int getEffectiveChunkSize() {
-		return getChunkSize() - getEffectiveChunkProcessor().sizeInBytes();
+		return getChunkSize() - getEffectiveChunkProcessor().sizeInBytes(this);
 	}
 
 	/**

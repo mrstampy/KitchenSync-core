@@ -37,7 +37,7 @@ public class NoProcessChunkProcessor implements ChunkProcessor {
 	 * com.github.mrstampy.kitchensync.stream.header.ChunkProcessor#sizeInBytes()
 	 */
 	@Override
-	public int sizeInBytes() {
+	public int sizeInBytes(Streamer<?> streamer) {
 		return 0;
 	}
 
