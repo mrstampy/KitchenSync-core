@@ -47,8 +47,9 @@ public class SequenceHeaderPrepender extends AbstractChunkProcessor {
 	 */
 	@Override
 	protected ByteBuf processImpl(Streamer<?> streamer, byte[] message) {
-		int headerLength = sizeInBytes(streamer) + message.length;
-		ByteBuf buf = createByteBuf(headerLength);
+		int headerLength = sizeInBytes(streamer);
+		
+		ByteBuf buf = createByteBuf(headerLength + message.length);
 
 		buf.writeBytes(SequenceHeader.SEQUENCE_HEADER_BYTES);
 		buf.writeLong(streamer.getSequence());
