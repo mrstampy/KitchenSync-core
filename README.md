@@ -4,8 +4,13 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3.3"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3.4"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
+
+# Release 2.3.4 - August 31, 2014
+
+* Added [ResettingLatch](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/util/ResettingLatch.java) utility class.
+* [ChunkProcessor](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/header/ChunkProcessor.java) API change, streamer now supplied when determining header size
 
 # Release 2.3.3 - August 30, 2014
 
