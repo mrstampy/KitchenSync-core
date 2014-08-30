@@ -47,13 +47,30 @@ public class SequenceHeaderPrepender extends AbstractChunkProcessor {
 	 */
 	@Override
 	protected ByteBuf processImpl(Streamer<?> streamer, byte[] message) {
-		ByteBuf buf = createByteBuf(sizeInBytes(streamer) + message.length);
+		int headerLength = sizeInBytes(streamer) + message.length;
+		ByteBuf buf = createByteBuf(headerLength);
 
 		buf.writeBytes(SequenceHeader.SEQUENCE_HEADER_BYTES);
 		buf.writeLong(streamer.getSequence());
+		appendToHeader(streamer, buf, headerLength);
 		buf.writeBytes(message);
 
 		return buf;
+	}
+
+	/**
+	 * Hook for subclasses to append data to the header if required. Default impl
+	 * does nothing.
+	 * 
+	 * @param streamer
+	 *          supplied for state information
+	 * @param buf
+	 *          the buffer containing the default header information
+	 * @param headerLength
+	 *          the total length this header is expected to be
+	 * @see #sizeInBytes(Streamer)
+	 */
+	protected void appendToHeader(Streamer<?> streamer, ByteBuf buf, int headerLength) {
 	}
 
 }
