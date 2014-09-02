@@ -4,8 +4,12 @@
 
 # Quickstart
 
-* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3.4"/&gt;
+* Ivy dependency - &lt;dependency org="com.github.mrstampy" name="KitchenSync-core" rev="2.3.5"/&gt;
 * [Example code](https://github.com/mrstampy/KitchenSync-core/tree/master/KitchenSync-core/test/com/github/mrstampy/kitchensync/test)
+
+# Release 2.3.5 - September 2, 2014
+
+* Improvements in [ByteArrayStreamer](https://github.com/mrstampy/KitchenSync-core/blob/master/KitchenSync-core/src/com/github/mrstampy/kitchensync/stream/ByteArrayStreamer.java)
 
 # Release 2.3.4 - August 31, 2014
 
