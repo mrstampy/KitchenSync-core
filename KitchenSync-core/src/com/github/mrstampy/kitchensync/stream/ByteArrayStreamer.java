@@ -157,6 +157,12 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 		cancelled.set(false);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.github.mrstampy.kitchensync.stream.AbstractEncapsulatedStreamer#
+	 * createStreamer()
+	 */
 	@Override
 	protected BufferedInputStreamStreamer createStreamer() throws Exception {
 		BufferedInputStreamStreamer streamer = new BufferedInputStreamStreamer(inputStream, channel, destination);
@@ -319,8 +325,6 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 * Start await thread for the {@link PipedInputStream} to be cleared by the
 	 * {@link Streamer}.
 	 *
-	 * @param cdl
-	 *          the cdl
 	 * @return the subscription
 	 */
 	protected Subscription startAwaitThread() {
@@ -330,7 +334,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 			public void call() {
 				try {
 					if (inputStream.available() > 0) {
-						if(!isStreaming()) stream();
+						if (!isStreaming()) stream();
 						return;
 					}
 				} catch (IOException e) {
@@ -364,8 +368,8 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	}
 
 	/**
-	 * Exposing throttling
-	 * 
+	 * Exposing throttling.
+	 *
 	 * @return the microseconds to throttle between chunks
 	 * @see AbstractStreamer#getThrottle()
 	 */
@@ -374,8 +378,8 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	}
 
 	/**
-	 * Exposing throttling
-	 * 
+	 * Exposing throttling.
+	 *
 	 * @param throttle
 	 *          the microseconds to throttle between chunks
 	 * @see AbstractStreamer#setThrottle(int)
