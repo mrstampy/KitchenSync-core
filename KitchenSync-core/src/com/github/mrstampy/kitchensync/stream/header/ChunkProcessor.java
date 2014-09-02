@@ -32,10 +32,9 @@ import com.github.mrstampy.kitchensync.stream.Streamer;
 public interface ChunkProcessor {
 
 	/**
-	 * Size in bytes of any additional meta information added to the message
-	 * (fixed length). The value returned will be subtracted from
-	 * {@link Streamer#getChunkSize()} when determining the size of chunk to
-	 * obtain.
+	 * Size in bytes of any additional meta information added to the message. The
+	 * value returned will be subtracted from {@link Streamer#getChunkSize()} when
+	 * determining the size of chunk to obtain.
 	 *
 	 * @param the
 	 *          streamer should header size be dependent upon state
