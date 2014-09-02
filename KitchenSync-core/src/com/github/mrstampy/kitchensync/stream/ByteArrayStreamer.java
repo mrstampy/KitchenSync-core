@@ -64,7 +64,7 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	private AtomicBoolean cancelled = new AtomicBoolean(false);
 	private AtomicBoolean eom = new AtomicBoolean(false);
 
-	private Scheduler svc = Schedulers.from(Executors.newCachedThreadPool());
+	private Scheduler svc = Schedulers.from(Executors.newFixedThreadPool(3));
 
 	private ResettingLatch latch = new ResettingLatch();
 	private ResettingLatch eomLatch = new ResettingLatch();
@@ -190,14 +190,12 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 			log.warn("Null message ignored");
 			sf.finished(false);
 		} else {
-
 			svc.createWorker().schedule(new Action0() {
 
 				@Override
 				public void call() {
 					try {
 						sendMessage(message);
-						if (isEomOnFinish()) eomLatch.await(10, TimeUnit.MILLISECONDS);
 						sf.finished(!cancelled.get());
 					} catch (IOException e) {
 						sf.finished(false, e);
@@ -224,24 +222,41 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	 *           the IO exception
 	 */
 	protected void sendMessage(byte[] message) throws IOException {
-		int messageLength = message.length;
-
 		try {
-			for (int from = 0; from < messageLength; from += halfPipeSize) {
-				if (cancelled.get()) return;
+			addToOutputStream(message);
 
-				int to = getTo(messageLength, from);
-
-				writeAndFlush(Arrays.copyOfRange(message, from, to));
+			if (isEomOnFinish()) {
+				startAvailableCheck();
+				awaitEom();
+				sendEndOfMessage();
 			}
-			if (isEomOnFinish()) sendEomOnFinish();
 		} finally {
 			latch.countDown();
 		}
-
 	}
 
-	private void sendEomOnFinish() {
+	private void addToOutputStream(byte[] message) throws IOException {
+		int messageLength = message.length;
+
+		for (int from = 0; from < messageLength; from += halfPipeSize) {
+			if (cancelled.get()) return;
+
+			int to = getTo(messageLength, from);
+
+			writeAndFlush(Arrays.copyOfRange(message, from, to));
+			awaitFlush();
+		}
+	}
+
+	private void awaitEom() {
+		boolean ok = eomLatch.await(10, TimeUnit.MILLISECONDS);
+		while (!ok) {
+			log.warn("Message await not ok");
+			ok = eomLatch.await(10, TimeUnit.MILLISECONDS);
+		}
+	}
+
+	private void startAvailableCheck() {
 		svc.createWorker().schedule(new Action0() {
 
 			@Override
@@ -250,9 +265,9 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 					int available = inputStream.available();
 					while (available > 0) {
 						KiSyUtils.snooze(1);
+						if (!isStreaming()) stream();
 						available = inputStream.available();
 					}
-					sendEndOfMessage();
 				} catch (IOException e) {
 					log.error("Unexpected exception", e);
 				} finally {
@@ -279,10 +294,6 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 	protected void writeAndFlush(byte[] chunk) throws IOException {
 		outputStream.write(chunk);
 		outputStream.flush();
-
-		if (!isStreaming()) stream();
-
-		awaitFlush();
 	}
 
 	/**
@@ -318,7 +329,10 @@ public class ByteArrayStreamer extends AbstractEncapsulatedStreamer<byte[], Buff
 			@Override
 			public void call() {
 				try {
-					if (inputStream.available() > halfPipeSize) return;
+					if (inputStream.available() > 0) {
+						if(!isStreaming()) stream();
+						return;
+					}
 				} catch (IOException e) {
 					log.error("Unexpected exception", e);
 				}

@@ -46,7 +46,6 @@ import com.github.mrstampy.kitchensync.stream.header.SequenceHeader;
 import com.github.mrstampy.kitchensync.stream.inbound.EndOfMessageInboundMessageHandler;
 import com.github.mrstampy.kitchensync.stream.inbound.StreamAckInboundMessageHandler;
 import com.github.mrstampy.kitchensync.test.channel.ByteArrayChannel;
-import com.github.mrstampy.kitchensync.util.KiSyUtils;
 
 /**
  * The Class StreamerTester streams any number of largish files (several megs
@@ -114,6 +113,7 @@ public class ByteArrayStreamerTester {
 	public void message() throws Exception {
 		streamer = getByteArrayStreamer();
 		streamer.setChunksPerSecond(100);
+		streamer.setEomOnFinish(true);
 		startMonitorService();
 
 		stream();
@@ -132,10 +132,6 @@ public class ByteArrayStreamerTester {
 			byte[] b = getBytes(file);
 			ChannelFuture future = streamer.stream(b);
 			future.awaitUninterruptibly();
-
-			KiSyUtils.snooze(100);
-
-			streamer.sendEndOfMessage();
 
 			log.info("Success? {}", future.isSuccess());
 			BigDecimal packetLoss = (BigDecimal.ONE.subtract(new BigDecimal(received.get()).divide(

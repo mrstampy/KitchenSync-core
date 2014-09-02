@@ -573,8 +573,10 @@ public abstract class AbstractStreamer<MSG> implements Streamer<MSG> {
 		List<byte[]> chunks = new ArrayList<byte[]>();
 		for (int i = 0; i < getConcurrentThreads(); i++) {
 			byte[] chunk = getChunkWithHeader();
-			if (chunk != null) chunks.add(chunk);
-			if (chunk.length == 0) break;
+
+			if (chunk == null || chunk.length == 0) break;
+
+			chunks.add(chunk);
 		}
 
 		if (chunks.isEmpty()) {
