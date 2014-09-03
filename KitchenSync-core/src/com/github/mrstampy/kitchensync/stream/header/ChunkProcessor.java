@@ -36,8 +36,8 @@ public interface ChunkProcessor {
 	 * value returned will be subtracted from {@link Streamer#getChunkSize()} when
 	 * determining the size of chunk to obtain.
 	 *
-	 * @param the
-	 *          streamer should header size be dependent upon state
+	 * @param streamer
+	 *          should header size be dependent upon state
 	 * @return the size
 	 */
 	int sizeInBytes(Streamer<?> streamer);
