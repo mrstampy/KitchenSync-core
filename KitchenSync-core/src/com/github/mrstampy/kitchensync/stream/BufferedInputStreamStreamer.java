@@ -22,13 +22,9 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import rx.functions.Action0;
 
 import com.github.mrstampy.kitchensync.netty.channel.KiSyChannel;
 import com.github.mrstampy.kitchensync.util.KiSyUtils;
@@ -105,23 +101,9 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	protected byte[] getChunk() throws Exception {
 		int remaining = (int) remaining();
 
-		if (remaining == 0 && !isFinishOnEmptyStream()) {
-			startWaitForMore();
-			latch = new CountDownLatch(1);
+		if (remaining == 0 && isFinishOnEmptyStream()) finish(true, null);
 
-			// stop the scheduler
-			if (isChunksPerSecond()) return null;
-
-			// wait till bytes are available, streaming is cancelled
-			// or an error occurs
-			latch.await();
-
-			remaining = (int) remaining();
-		}
-
-		// Error occurred getting remaining.
-		// finalization logic already invoked.
-		if (remaining == -1) return null;
+		if (remaining <= 0) return null;
 
 		// Blue sky
 		byte[] chunk = createByteArray(remaining);
@@ -194,28 +176,11 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	}
 
 	/**
-	 * Starts the wait for more bytes thread when not
-	 * {@link #isFinishOnEmptyStream()}.
-	 */
-	protected void startWaitForMore() {
-		sub = svc.createWorker().schedulePeriodically(new Action0() {
-
-			@Override
-			public void call() {
-				long remaining = remaining();
-				if (remaining == 0) return;
-
-				countdownLatch();
-				if (isChunksPerSecond() && !isComplete()) stream();
-			}
-		}, 10, 10, TimeUnit.MILLISECONDS);
-	}
-
-	/**
 	 * Overriding to prevent finishing on an empty chunk when not
 	 * {@link #isFinishOnEmptyStream()}.
 	 *
-	 * @param chunk the chunk
+	 * @param chunk
+	 *          the chunk
 	 */
 	protected void processChunk(byte[] chunk) {
 		if (isPausible(chunk)) {
@@ -277,7 +242,8 @@ public class BufferedInputStreamStreamer extends AbstractStreamer<InputStream> {
 	 * If set to false will prevent {@link InputStream#mark(int)} and
 	 * {@link InputStream#reset()} from being invoked.
 	 *
-	 * @param inputStreamResettable the input stream resettable
+	 * @param inputStreamResettable
+	 *          the input stream resettable
 	 * @see #isFinishOnEmptyStream()
 	 */
 	public void setInputStreamResettable(boolean inputStreamResettable) {
